@@ -31,7 +31,7 @@ p7_neck       = [140, 30];
 
 // Fastener Locations
 hole_d = 3.5;              
-x_offset = 41; 
+x_offset = 43; // SHIFTED: Moved outward to 43mm for a safer 5mm clearance around the display
 y_offset = screen_l/2 + 10;  
 side_y_spacing = 40;        
 
@@ -67,8 +67,9 @@ function get_seam_z(y) =
 module blue_bracket() {
     difference() {
         cube([enc_width, bracket_w, bracket_t], center=true); 
-        translate([-x_offset, 0, 0]) cylinder(h=15, d=6.6, center=true, $fn=6);
-        translate([ x_offset, 0, 0]) cylinder(h=15, d=6.6, center=true, $fn=6);
+        // ROTATED: Z-axis rotated by 30 degrees so flat edges align with bracket walls
+        translate([-x_offset, 0, 0]) rotate([0, 0, 30]) cylinder(h=15, d=6.6, center=true, $fn=6);
+        translate([ x_offset, 0, 0]) rotate([0, 0, 30]) cylinder(h=15, d=6.6, center=true, $fn=6);
     }
 }
 
@@ -106,7 +107,6 @@ module master_shell() {
                 rotate([face_angle, 0, 0]) {
                     for (x = [-x_offset, x_offset]) {
                         for (y = [-side_y_spacing, 0, side_y_spacing]) {
-                            // CORRECTED: Tubes now start exactly at the back of the acrylic (-bracket_depth)
                             translate([x, y, -bracket_depth]) 
                                 translate([-6, -6, 0]) cube([12, 12, 100]);
                         }
@@ -139,7 +139,6 @@ module master_shell() {
             }
 
             // SLOTS: Blue Brackets 
-            // CORRECTED: Shifted forward by bracket_t to directly back the acrylic sheet
             translate([0, 0, -bracket_depth - (bracket_t/2)]) {
                 for (y = [-side_y_spacing, 0, side_y_spacing]) {
                     translate([0, y, 0]) cube([enc_width + 10, bracket_w + tol, bracket_t + tol], center=true);
@@ -187,8 +186,9 @@ module case_bottom() {
         
         for(loc = boss_locs) {
             z_cut = get_seam_z(loc[1]);
+            // ROTATED: Main clamshell nuts updated to match the 30-degree logic
             translate([loc[0], loc[1], z_cut - 3]) 
-            cylinder(h=10, d=6.6, $fn=6); 
+            rotate([0, 0, 30]) cylinder(h=10, d=6.6, $fn=6); 
         }
     }
 }
