@@ -8,7 +8,7 @@ render_part = 0;
 
 // --- PARAMETERS ---
 // Enclosure Dimensions
-enc_width = 96; 
+enc_width = 100; // WIDENED: Increased to 100mm to push the side walls outward and clear the hex nut pocket
 wall = 3;
 
 // Screen Dimensions
@@ -31,7 +31,7 @@ p7_neck       = [140, 30];
 
 // Fastener Locations
 hole_d = 3.5;              
-x_offset = 43; // SHIFTED: Moved outward to 43mm for a safer 5mm clearance around the display
+x_offset = 43; 
 y_offset = screen_l/2 + 10;  
 side_y_spacing = 40;        
 
@@ -67,7 +67,6 @@ function get_seam_z(y) =
 module blue_bracket() {
     difference() {
         cube([enc_width, bracket_w, bracket_t], center=true); 
-        // ROTATED: Z-axis rotated by 30 degrees so flat edges align with bracket walls
         translate([-x_offset, 0, 0]) rotate([0, 0, 30]) cylinder(h=15, d=6.6, center=true, $fn=6);
         translate([ x_offset, 0, 0]) rotate([0, 0, 30]) cylinder(h=15, d=6.6, center=true, $fn=6);
     }
@@ -186,7 +185,6 @@ module case_bottom() {
         
         for(loc = boss_locs) {
             z_cut = get_seam_z(loc[1]);
-            // ROTATED: Main clamshell nuts updated to match the 30-degree logic
             translate([loc[0], loc[1], z_cut - 3]) 
             rotate([0, 0, 30]) cylinder(h=10, d=6.6, $fn=6); 
         }
