@@ -171,13 +171,13 @@ module lip_safe_positive() {
             translate([0, 0, lip_h]) bottom_mask();
         }
         
-        // Tight mask: Hugs the 12x10 boss exactly (with 0.1mm clearance) to eliminate the surrounding trench
+        // Uniform mask to cleanly suppress the lip around the boss without slicing it
         for(loc = boss_locs) {
-            translate([loc[0], loc[1], 50]) cube([12.2, 10.2, 200], center=true);
+            translate([loc[0], loc[1], 50]) cube([15, 10.1, 200], center=true);
         }
         
-        // Dedicated rear-slope cleanup: Erases the rogue sliver on the back wall without destroying the side lip
-        translate([0, 160, 50]) cube([enc_width + 10, 20, 200], center=true);
+        // Expanded rear-slope cleanup: Spans Y=145 to 195 to completely swallow the diagonal wall intersection
+        translate([0, 170, 50]) cube([enc_width + 10, 50, 200], center=true);
     }
 }
 
@@ -191,13 +191,13 @@ module lip_safe_negative() {
             translate([0, 0, lip_h + 0.3]) bottom_mask();
         }
         
-        // Tighter negative mask (11.8 x 9.8) to preserve the lap joint groove right up to the boss in the lid
+        // Matched uniform mask to ensure identical mating surfaces
         for(loc = boss_locs) {
-            translate([loc[0], loc[1], 50]) cube([11.8, 9.8, 200], center=true);
+            translate([loc[0], loc[1], 50]) cube([15, 10.1, 200], center=true);
         }
         
-        // Dedicated rear-slope cleanup 
-        translate([0, 160, 50]) cube([enc_width + 10, 20, 200], center=true);
+        // Expanded rear-slope cleanup 
+        translate([0, 170, 50]) cube([enc_width + 10, 50, 200], center=true);
     }
 }
 
