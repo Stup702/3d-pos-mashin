@@ -8,7 +8,7 @@ render_part = 0;
 
 // --- PARAMETERS ---
 // Enclosure Dimensions
-enc_width = 96; // WIDENED: Increased by 6mm to reinforce the internal shear walls and prevent side blowout
+enc_width = 96; 
 wall = 3;
 
 // Screen Dimensions
@@ -19,7 +19,7 @@ screen_l = 121;
 bracket_w = 12;
 bracket_t = 3;
 tol = 0.5; 
-bracket_depth = 10; 
+bracket_depth = 14; 
 
 // Side Profile Coordinates [Y, Z]
 p1_front_bot  = [-20, 0];      
@@ -31,15 +31,14 @@ p7_neck       = [140, 30];
 
 // Fastener Locations
 hole_d = 3.5;              
-x_offset = 41; // SHIFTED: Centered perfectly in the newly thickened side wall
+x_offset = 41; 
 y_offset = screen_l/2 + 10;  
 side_y_spacing = 40;        
 
 // Clamshell Fastener Locations (The 4 Corner Bosses)
-// SHIFTED: Moved outward to X=±40 to completely dodge the bracket slot gouge
 boss_locs = [ 
-    [-40, -10],  // Front Left  (Moved 10mm forward away from screen cutout)
-    [ 40, -10],  // Front Right (Moved 10mm forward away from screen cutout)
+    [-40, -10],  // Front Left 
+    [ 40, -10],  // Front Right
     [-40, 130],  // Back Left 
     [ 40, 130]   // Back Right
 ];
@@ -50,12 +49,11 @@ dz = p3_peak[1] - p2_front_top[1];
 face_angle = atan2(dz, dy);
 face_cy = p2_front_top[0] + (dy / 2);
 face_cz = p2_front_top[1] + (dz / 2);
-face_len = sqrt(dy*dy + dz*dz); // Exact diagonal length of the exterior faceplate
-inner_width = enc_width - (wall * 2); // Exact internal void width
-inner_face_len = face_len * ((dy - (wall * 2)) / dy); // Exact internal diagonal length
+face_len = sqrt(dy*dy + dz*dz); 
+inner_width = enc_width - (wall * 2); 
+inner_face_len = face_len * ((dy - (wall * 2)) / dy); 
 
-// GEOMETRY CORRECTION: Shifting the bracket deep into the case moves it backward relative to the vertical walls. 
-// This calculates the exact forward shift needed to keep it perfectly centered between the inner walls.
+// GEOMETRY CORRECTION
 y_corr = - (bracket_depth + (bracket_t/2)) * tan(face_angle); 
 
 // Stepped Seam Math
@@ -68,9 +66,7 @@ function get_seam_z(y) =
 // --- MODULES: BRACKETS (WITH EMBEDDED HEX POCKETS) ---
 module blue_bracket() {
     difference() {
-        // Use the full exterior width so the ends sit exactly flush with the outside walls
         cube([enc_width, bracket_w, bracket_t], center=true); 
-        // 6.6mm Hex Pockets for M3 Nuts
         translate([-x_offset, 0, 0]) cylinder(h=15, d=6.6, center=true, $fn=6);
         translate([ x_offset, 0, 0]) cylinder(h=15, d=6.6, center=true, $fn=6);
     }
@@ -108,11 +104,10 @@ module master_shell() {
                 outer_solid();
                 translate([0, face_cy, face_cz])
                 rotate([face_angle, 0, 0]) {
-                    // Blue Tubes (Rectangular shear blocks, corrected Z-axis)
                     for (x = [-x_offset, x_offset]) {
                         for (y = [-side_y_spacing, 0, side_y_spacing]) {
-                            // Centered 12x12 block extending purely upward
-                            translate([x, y, -bracket_depth - bracket_t]) 
+                            // CORRECTED: Tubes now start exactly at the back of the acrylic (-bracket_depth)
+                            translate([x, y, -bracket_depth]) 
                                 translate([-6, -6, 0]) cube([12, 12, 100]);
                         }
                     }
@@ -144,9 +139,9 @@ module master_shell() {
             }
 
             // SLOTS: Blue Brackets 
-            translate([0, 0, -bracket_depth - bracket_t - (bracket_t/2)]) {
+            // CORRECTED: Shifted forward by bracket_t to directly back the acrylic sheet
+            translate([0, 0, -bracket_depth - (bracket_t/2)]) {
                 for (y = [-side_y_spacing, 0, side_y_spacing]) {
-                    // Extended the cutting tool (+10) to cleanly pierce the side walls
                     translate([0, y, 0]) cube([enc_width + 10, bracket_w + tol, bracket_t + tol], center=true);
                 }
             }
@@ -174,7 +169,6 @@ module case_top() {
         master_shell();
         bottom_mask();
         
-        // Counterbores for Clamshell M3 screw heads
         for(loc = boss_locs) {
             roof_z = p2_front_top[1] + (loc[1] - p2_front_top[0]) * tan(face_angle);
             translate([loc[0], loc[1], roof_z - 2]) 
@@ -191,7 +185,6 @@ module case_bottom() {
             bottom_mask();
         }
         
-        // Captive Hex Nut Pockets for Clamshell Split
         for(loc = boss_locs) {
             z_cut = get_seam_z(loc[1]);
             translate([loc[0], loc[1], z_cut - 3]) 
@@ -208,7 +201,7 @@ rotate([0, 0, -90]) {
         
         translate([0, face_cy, face_cz + 40])
         rotate([face_angle, 0, 0]) {
-            translate([0, 0, -bracket_depth - bracket_t - (bracket_t/2)]) {
+            translate([0, 0, -bracket_depth - (bracket_t/2)]) {
                 for (y = [-side_y_spacing, 0, side_y_spacing]) {
                     color("DodgerBlue") translate([0, y, 0]) blue_bracket();
                 }
@@ -227,7 +220,7 @@ rotate([0, 0, -90]) {
         
         translate([0, face_cy, face_cz])
         rotate([face_angle, 0, 0]) {
-            translate([0, 0, -bracket_depth - bracket_t - (bracket_t/2)]) {
+            translate([0, 0, -bracket_depth - (bracket_t/2)]) {
                 for (y = [-side_y_spacing, 0, side_y_spacing]) {
                     color("DodgerBlue") translate([0, y, 0]) blue_bracket();
                 }
