@@ -92,12 +92,14 @@ module master_shell() {
                 translate([0, 80, -50]) cube([enc_width + 10, 300, 100], center=true);
             }
             
-            // Corner Pillars
+            // Corner Pillars (Updated to Boxy & Manifold)
             intersection() {
                 outer_solid();
                 union() {
                     for(loc = boss_locs) {
-                        translate([loc[0], loc[1], 0]) cylinder(h=100, d=10, $fn=30);
+                        // 12 wide in X, 10 deep in Y. 
+                        // This intentionally penetrates the inner wall by 1mm to ensure a clean boolean union.
+                        translate([loc[0], loc[1], 50]) cube([12, 10, 100], center=true);
                     }
                 }
             }
@@ -168,7 +170,14 @@ module lip_safe_positive() {
             }
             translate([0, 0, lip_h]) bottom_mask();
         }
-        for(loc = boss_locs) translate([loc[0], loc[1], -50]) cylinder(h=200, d=11, $fn=30);
+        
+        // Tight mask: Hugs the 12x10 boss exactly (with 0.1mm clearance) to eliminate the surrounding trench
+        for(loc = boss_locs) {
+            translate([loc[0], loc[1], 50]) cube([12.2, 10.2, 200], center=true);
+        }
+        
+        // Dedicated rear-slope cleanup: Erases the rogue sliver on the back wall without destroying the side lip
+        translate([0, 160, 50]) cube([enc_width + 10, 20, 200], center=true);
     }
 }
 
@@ -181,7 +190,14 @@ module lip_safe_negative() {
             }
             translate([0, 0, lip_h + 0.3]) bottom_mask();
         }
-        for(loc = boss_locs) translate([loc[0], loc[1], -50]) cylinder(h=200, d=9, $fn=30);
+        
+        // Tighter negative mask (11.8 x 9.8) to preserve the lap joint groove right up to the boss in the lid
+        for(loc = boss_locs) {
+            translate([loc[0], loc[1], 50]) cube([11.8, 9.8, 200], center=true);
+        }
+        
+        // Dedicated rear-slope cleanup 
+        translate([0, 160, 50]) cube([enc_width + 10, 20, 200], center=true);
     }
 }
 
