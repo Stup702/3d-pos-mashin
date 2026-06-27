@@ -1,0 +1,37 @@
+name: SCAD to STL Build Pipeline
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+jobs:
+  build-and-convert:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Deno
+        uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x # Explicitly targets Deno 2.x for the new global install syntax
+
+      - name: Install scad2stl
+        run: |
+          git clone https://github.com/code4fukui/scad2stl.git
+          cd scad2stl
+          deno run -A download-latest-release-openscad.js
+          deno install --global -A --name=scad2stl scad2stl.js
+
+      - name: Convert SCAD to STL
+        run: scad2stl main.scad
+
+      - name: Upload STL Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: converted-3d-model
+          path: '*.stl'
