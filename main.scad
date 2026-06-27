@@ -2,9 +2,8 @@
 // 0 = Exploded Assembly View
 // 1 = Top Case Half (Lid)
 // 2 = Bottom Case Half (Tub)
-// 3 = Red Bracket (Longitudinal - Prints 2x)
-// 4 = Blue Bracket (Transverse - Prints 3x)
-// 5 = X-Ray Assembly (See brackets locked inside)
+// 3 = Blue Bracket (Transverse - Prints 3x)
+// 4 = X-Ray Assembly (See brackets locked inside)
 render_part = 0;
 
 // --- PARAMETERS ---
@@ -35,10 +34,9 @@ hole_d = 3.5;
 x_offset = 41; // SHIFTED: Centered perfectly in the newly thickened side wall
 y_offset = screen_l/2 + 10;  
 side_y_spacing = 40;        
-red_bracket_x = 25;         
 
 // Clamshell Fastener Locations (The 4 Corner Bosses)
-// SHIFTED: Moved outward to X=±40 to completely dodge the red bracket slot gouge
+// SHIFTED: Moved outward to X=±40 to completely dodge the bracket slot gouge
 boss_locs = [ 
     [-40, -10],  // Front Left  (Moved 10mm forward away from screen cutout)
     [ 40, -10],  // Front Right (Moved 10mm forward away from screen cutout)
@@ -68,25 +66,6 @@ function get_seam_z(y) =
     p2_front_top[1] - cut_drop + (y - p2_front_top[0]) * ((p3_peak[1] - p2_front_top[1]) / (p3_peak[0] - p2_front_top[0]));
 
 // --- MODULES: BRACKETS (WITH EMBEDDED HEX POCKETS) ---
-module red_bracket() {
-    difference() {
-        // Elegant exact fit: Over-size the bracket, then intersect it with the inverted outer shell 
-        // so the ends perfectly inherit the vertical angles of the front and back walls.
-        intersection() {
-            cube([bracket_w, 300, bracket_t], center=true); 
-            
-            translate([0, 0, bracket_depth + (bracket_t/2)])
-            rotate([-face_angle, 0, 0])
-            translate([0, -face_cy, -face_cz])
-            outer_solid();
-        }
-        
-        // The hex pockets remain locked to the faceplate coordinates to align with clamp screws
-        translate([0, y_offset, 0]) cylinder(h=15, d=6.6, center=true, $fn=6);
-        translate([0, -y_offset, 0]) cylinder(h=15, d=6.6, center=true, $fn=6);
-    }
-}
-
 module blue_bracket() {
     difference() {
         // Use the full exterior width so the ends sit exactly flush with the outside walls
@@ -129,12 +108,6 @@ module master_shell() {
                 outer_solid();
                 translate([0, face_cy, face_cz])
                 rotate([face_angle, 0, 0]) {
-                    // Red Tubes
-                    for (x = [-red_bracket_x, red_bracket_x]) {
-                        for (y = [-y_offset, y_offset]) {
-                            translate([x, y, -bracket_depth]) cylinder(h=100, d=10, $fn=30);
-                        }
-                    }
                     // Blue Tubes (Rectangular shear blocks, corrected Z-axis)
                     for (x = [-x_offset, x_offset]) {
                         for (y = [-side_y_spacing, 0, side_y_spacing]) {
@@ -163,23 +136,11 @@ module master_shell() {
             
             // Vertical Clamp Screws
             translate([0, 0, -20]) {
-                for (x = [-red_bracket_x, red_bracket_x]) {
-                    for (y = [-y_offset, y_offset]) {
-                        translate([x, y, 0]) cylinder(h=100, d=hole_d, center=true, $fn=30); 
-                    }
-                }
                 for (x = [-x_offset, x_offset]) {
                     for (y = [-side_y_spacing, 0, side_y_spacing]) {
                         translate([x, y, 0]) cylinder(h=100, d=hole_d, center=true, $fn=30); 
                     }
                 }
-            }
-
-            // SLOTS: Red Brackets
-            translate([0, 0, -bracket_depth - (bracket_t/2)]) {
-                // Extended the cutting tool (+10) to completely blast through the outer lips
-                translate([-red_bracket_x, y_corr, 0]) cube([bracket_w + tol, face_len + 10, bracket_t + tol], center=true);
-                translate([ red_bracket_x, y_corr, 0]) cube([bracket_w + tol, face_len + 10, bracket_t + tol], center=true);
             }
 
             // SLOTS: Blue Brackets 
@@ -247,10 +208,6 @@ rotate([0, 0, -90]) {
         
         translate([0, face_cy, face_cz + 40])
         rotate([face_angle, 0, 0]) {
-            translate([0, 0, -bracket_depth - (bracket_t/2)]) {
-                color("Crimson") translate([-red_bracket_x, 0, 0]) red_bracket();
-                color("Crimson") translate([ red_bracket_x, 0, 0]) red_bracket();
-            }
             translate([0, 0, -bracket_depth - bracket_t - (bracket_t/2)]) {
                 for (y = [-side_y_spacing, 0, side_y_spacing]) {
                     color("DodgerBlue") translate([0, y, 0]) blue_bracket();
@@ -262,20 +219,14 @@ rotate([0, 0, -90]) {
     } else if (render_part == 2) {
         case_bottom();
     } else if (render_part == 3) {
-        red_bracket();
-    } else if (render_part == 4) {
         blue_bracket();
-    } else if (render_part == 5) {
+    } else if (render_part == 4) {
         color("SlateGray", 1) 
         case_top();
         color("DarkSlateGray", 1) case_bottom();
         
         translate([0, face_cy, face_cz])
         rotate([face_angle, 0, 0]) {
-            translate([0, 0, -bracket_depth - (bracket_t/2)]) {
-                color("Crimson") translate([-red_bracket_x, 0, 0]) red_bracket();
-                color("Crimson") translate([ red_bracket_x, 0, 0]) red_bracket();
-            }
             translate([0, 0, -bracket_depth - bracket_t - (bracket_t/2)]) {
                 for (y = [-side_y_spacing, 0, side_y_spacing]) {
                     color("DodgerBlue") translate([0, y, 0]) blue_bracket();
