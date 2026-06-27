@@ -8,7 +8,7 @@ render_part = 0;
 
 // --- PARAMETERS ---
 // Enclosure Dimensions
-enc_width = 100; // WIDENED: Increased to 100mm to push the side walls outward and clear the hex nut pocket
+enc_width = 100; 
 wall = 3;
 
 // Screen Dimensions
@@ -20,6 +20,11 @@ bracket_w = 12;
 bracket_t = 3;
 tol = 0.5; 
 bracket_depth = 14; 
+
+// Lap Joint Parameters
+lip_h = 2.0;    
+lip_t = 1.5;    
+lip_tol = 0.2;  
 
 // Side Profile Coordinates [Y, Z]
 p1_front_bot  = [-20, 0];      
@@ -35,12 +40,16 @@ x_offset = 43;
 y_offset = screen_l/2 + 10;  
 side_y_spacing = 40;        
 
-// Clamshell Fastener Locations (The 4 Corner Bosses)
+front_nut_drop = 5;  // Depth of captive nut below the seam (Front)
+back_nut_drop = 15;  // Depth of captive nut below the seam (Back)
+
+// Clamshell Fastener Locations 
+// SHIFTED: X moved to ±42 to permanently fuse the pillars to the inner side walls
 boss_locs = [ 
-    [-40, -10],  // Front Left 
-    [ 40, -10],  // Front Right
-    [-40, 130],  // Back Left 
-    [ 40, 130]   // Back Right
+    [-42, -10],  // Front Left 
+    [ 42, -10],  // Front Right
+    [-42, 130],  // Back Left 
+    [ 42, 130]   // Back Right
 ];
 
 // --- DERIVED MATH ---
@@ -49,12 +58,6 @@ dz = p3_peak[1] - p2_front_top[1];
 face_angle = atan2(dz, dy);
 face_cy = p2_front_top[0] + (dy / 2);
 face_cz = p2_front_top[1] + (dz / 2);
-face_len = sqrt(dy*dy + dz*dz); 
-inner_width = enc_width - (wall * 2); 
-inner_face_len = face_len * ((dy - (wall * 2)) / dy); 
-
-// GEOMETRY CORRECTION
-y_corr = - (bracket_depth + (bracket_t/2)) * tan(face_angle); 
 
 // Stepped Seam Math
 cut_drop = 24; 
@@ -63,7 +66,7 @@ function get_seam_z(y) =
     (y >= p3_peak[0])      ? p3_peak[1] - cut_drop :
     p2_front_top[1] - cut_drop + (y - p2_front_top[0]) * ((p3_peak[1] - p2_front_top[1]) / (p3_peak[0] - p2_front_top[0]));
 
-// --- MODULES: BRACKETS (WITH EMBEDDED HEX POCKETS) ---
+// --- MODULES: BRACKETS ---
 module blue_bracket() {
     difference() {
         cube([enc_width, bracket_w, bracket_t], center=true); 
@@ -72,7 +75,7 @@ module blue_bracket() {
     }
 }
 
-// --- MODULES: SHELL COMPONENTS ---
+// --- MODULES: SHELL & LAP JOINTS ---
 module outer_solid() {
     rotate([90, 0, 90]) 
     linear_extrude(height=enc_width, center=true)
@@ -82,14 +85,14 @@ module outer_solid() {
 module master_shell() {
     difference() {
         union() {
-            // 1. Hollow Wedge
+            // Hollow Wedge
             difference() {
                 outer_solid();
                 translate([0, 0, -1]) rotate([90, 0, 90]) linear_extrude(height=enc_width - (wall * 2), center=true) offset(delta=-wall) polygon([p1_front_bot, p2_front_top, p3_peak, p5_foot_back, p6_foot_front, p7_neck]);
                 translate([0, 80, -50]) cube([enc_width + 10, 300, 100], center=true);
             }
             
-            // 2. Corner Pillars
+            // Corner Pillars
             intersection() {
                 outer_solid();
                 union() {
@@ -99,7 +102,7 @@ module master_shell() {
                 }
             }
 
-            // 3. INTERNAL CRUSH TUBES
+            // Internal Crush Tubes for Display Brackets
             intersection() {
                 outer_solid();
                 translate([0, face_cy, face_cz])
@@ -114,9 +117,7 @@ module master_shell() {
             }
         }
 
-        // --- CUTS AND DRILLS ---
-
-        // Clamshell Corner Drills
+        // Screwholes
         for(loc = boss_locs) {
             translate([loc[0], loc[1], -10]) cylinder(h=150, d=3.5, $fn=30);
         }
@@ -124,11 +125,8 @@ module master_shell() {
         // Faceplate Operations
         translate([0, face_cy, face_cz])
         rotate([face_angle, 0, 0]) {
-            
-            // Screen Cutout
             translate([0, 0, -bracket_depth/2 + 1]) cube([screen_w, screen_l, bracket_depth + 2], center=true);
             
-            // Vertical Clamp Screws
             translate([0, 0, -20]) {
                 for (x = [-x_offset, x_offset]) {
                     for (y = [-side_y_spacing, 0, side_y_spacing]) {
@@ -137,7 +135,6 @@ module master_shell() {
                 }
             }
 
-            // SLOTS: Blue Brackets 
             translate([0, 0, -bracket_depth - (bracket_t/2)]) {
                 for (y = [-side_y_spacing, 0, side_y_spacing]) {
                     translate([0, y, 0]) cube([enc_width + 10, bracket_w + tol, bracket_t + tol], center=true);
@@ -161,11 +158,40 @@ module bottom_mask() {
     ]);
 }
 
+// --- LAP JOINT MODULES ---
+module lip_safe_positive() {
+    difference() {
+        intersection() {
+            difference() {
+                rotate([90, 0, 90]) linear_extrude(height=enc_width - lip_t*2, center=true) offset(delta=-lip_t) polygon([p1_front_bot, p2_front_top, p3_peak, p5_foot_back, p6_foot_front, p7_neck]);
+                rotate([90, 0, 90]) linear_extrude(height=enc_width - wall*2 - 2, center=true) offset(delta=-wall) polygon([p1_front_bot, p2_front_top, p3_peak, p5_foot_back, p6_foot_front, p7_neck]);
+            }
+            translate([0, 0, lip_h]) bottom_mask();
+        }
+        for(loc = boss_locs) translate([loc[0], loc[1], -50]) cylinder(h=200, d=11, $fn=30);
+    }
+}
+
+module lip_safe_negative() {
+    difference() {
+        intersection() {
+            difference() {
+                rotate([90, 0, 90]) linear_extrude(height=enc_width - lip_t*2 + lip_tol*2, center=true) offset(delta=-lip_t + lip_tol) polygon([p1_front_bot, p2_front_top, p3_peak, p5_foot_back, p6_foot_front, p7_neck]);
+                rotate([90, 0, 90]) linear_extrude(height=enc_width - wall*2 - 2, center=true) offset(delta=-wall - lip_tol) polygon([p1_front_bot, p2_front_top, p3_peak, p5_foot_back, p6_foot_front, p7_neck]);
+            }
+            translate([0, 0, lip_h + 0.3]) bottom_mask();
+        }
+        for(loc = boss_locs) translate([loc[0], loc[1], -50]) cylinder(h=200, d=9, $fn=30);
+    }
+}
+
+// --- CASE HALVES ---
 module case_top() {
     color("SlateGray")
     difference() {
         master_shell();
         bottom_mask();
+        lip_safe_negative(); 
         
         for(loc = boss_locs) {
             roof_z = p2_front_top[1] + (loc[1] - p2_front_top[0]) * tan(face_angle);
@@ -178,20 +204,33 @@ module case_top() {
 module case_bottom() {
     color("DarkSlateGray")
     difference() {
-        intersection() {
-            master_shell();
-            bottom_mask();
+        union() {
+            intersection() {
+                master_shell();
+                bottom_mask();
+            }
+            lip_safe_positive(); 
         }
         
+        // Side-Loading Captive Hex Nut Pockets
         for(loc = boss_locs) {
             z_cut = get_seam_z(loc[1]);
-            translate([loc[0], loc[1], z_cut - 3]) 
-            rotate([0, 0, 30]) cylinder(h=10, d=6.6, $fn=6); 
+            // Apply specific drop based on front or back location
+            z_drop = (loc[1] > 50) ? back_nut_drop : front_nut_drop;
+            
+            translate([loc[0], loc[1], z_cut - z_drop]) {
+                // Pocket widened slightly for actual FDM printing tolerances
+                rotate([0, 0, 30]) cylinder(h=3.2, d=6.6, center=true, $fn=6); 
+                
+                // Slide channel lengthened to completely blast through the inner wall
+                slot_dir = (loc[0] < 0) ? 1 : -1;
+                translate([slot_dir * 7.5, 0, 0]) cube([15, 6.0, 3.2], center=true);
+            }
         }
     }
 }
 
-// --- RENDER LOGIC WITH CORRECT ORIENTATION ---
+// --- RENDER LOGIC ---
 rotate([0, 0, -90]) {
     if (render_part == 0) {
         translate([0, 0, 40]) case_top();
