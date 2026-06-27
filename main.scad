@@ -235,28 +235,35 @@ module case_bottom() {
             z_drop = (loc[1] > 50) ? back_nut_drop : front_nut_drop;
             
             translate([loc[0], loc[1], z_cut - z_drop]) {
-                // Pocket widened slightly for actual FDM printing tolerances
-                rotate([0, 0, 30]) cylinder(h=3.2, d=6.6, center=true, $fn=6); 
+                // Removed rotation so flats align with the slide channel.
+                // d=6.93 yields exactly 6.0mm flat-to-flat width.
+                cylinder(h=3.2, d=6.93, center=true, $fn=6); 
                 
                 // Slide channel lengthened to completely blast through the inner wall
                 slot_dir = (loc[0] < 0) ? 1 : -1;
-                translate([slot_dir * 7.5, 0, 0]) cube([15, 6.0, 3.2], center=true);
+                translate([slot_dir * 12.5, 0, 0]) cube([25, 6.0, 3.2], center=true);
             }
         }
     }
 }
 
 // --- RENDER LOGIC ---
+// --- RENDER LOGIC ---
 rotate([0, 0, -90]) {
     if (render_part == 0) {
-        translate([0, 0, 40]) case_top();
-        case_bottom();
+        // Bottom Tub shifted to the right
+        translate([75, 0, 0]) case_bottom();
         
-        translate([0, face_cy, face_cz + 40])
-        rotate([face_angle, 0, 0]) {
-            translate([0, 0, -bracket_depth - (bracket_t/2)]) {
-                for (y = [-side_y_spacing, 0, side_y_spacing]) {
-                    color("DodgerBlue") translate([0, y, 0]) blue_bracket();
+        // Top Lid and Brackets grouped and shifted to the left
+        translate([-75, 0, 0]) {
+            case_top();
+            
+            translate([0, face_cy, face_cz])
+            rotate([face_angle, 0, 0]) {
+                translate([0, 0, -bracket_depth - (bracket_t/2)]) {
+                    for (y = [-side_y_spacing, 0, side_y_spacing]) {
+                        color("DodgerBlue") translate([0, y, 0]) blue_bracket();
+                    }
                 }
             }
         }
@@ -267,8 +274,7 @@ rotate([0, 0, -90]) {
     } else if (render_part == 3) {
         blue_bracket();
     } else if (render_part == 4) {
-        color("SlateGray", 1) 
-        case_top();
+        color("SlateGray", 1) case_top();
         color("DarkSlateGray", 1) case_bottom();
         
         translate([0, face_cy, face_cz])
