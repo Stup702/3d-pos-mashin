@@ -82,6 +82,7 @@ module outer_solid() {
     polygon([p1_front_bot, p2_front_top, p3_peak, p5_foot_back, p6_foot_front, p7_neck]);
 }
 
+// --- MODULES: SHELL & LAP JOINTS ---
 module master_shell() {
     difference() {
         union() {
@@ -127,16 +128,22 @@ module master_shell() {
         // Faceplate Operations
         translate([0, face_cy, face_cz])
         rotate([face_angle, 0, 0]) {
+            // Screen Cutout
             translate([0, 0, -bracket_depth/2 + 1]) cube([screen_w, screen_l, bracket_depth + 2], center=true);
             
-            translate([0, 0, -20]) {
-                for (x = [-x_offset, x_offset]) {
-                    for (y = [-side_y_spacing, 0, side_y_spacing]) {
-                        translate([x, y, 0]) cylinder(h=100, d=hole_d, center=true, $fn=30); 
-                    }
+            // Fastener Holes & Counterbores
+            for (x = [-x_offset, x_offset]) {
+                for (y = [-side_y_spacing, 0, side_y_spacing]) {
+                    // 3.5mm Through-hole
+                    translate([x, y, -20]) cylinder(h=100, d=hole_d, center=true, $fn=30); 
+                    
+                    // 6.5mm Counterbore (Cuts 3.2mm deep for an M3 socket head cap screw)
+                    // Z=0 is the sloped surface. Translating a 20mm center-cut by 6.8 places its bottom exactly at Z = -3.2.
+                    translate([x, y, 6.8]) cylinder(h=20, d=6.5, center=true, $fn=30); 
                 }
             }
 
+            // Bracket Slots
             translate([0, 0, -bracket_depth - (bracket_t/2)]) {
                 for (y = [-side_y_spacing, 0, side_y_spacing]) {
                     translate([0, y, 0]) cube([enc_width + 10, bracket_w + tol, bracket_t + tol], center=true);
@@ -211,7 +218,9 @@ module case_top() {
         
         for(loc = boss_locs) {
             roof_z = p2_front_top[1] + (loc[1] - p2_front_top[0]) * tan(face_angle);
-            translate([loc[0], loc[1], roof_z - 2]) 
+            
+            // Dropped from -2 to -4.5 to bury the screw head under the downhill slope
+            translate([loc[0], loc[1], roof_z - 4.5]) 
             cylinder(h=20, d=6.5, $fn=30); 
         }
     }
