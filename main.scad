@@ -257,7 +257,6 @@ module case_bottom() {
 }
 
 // --- RENDER LOGIC ---
-// --- RENDER LOGIC ---
 rotate([0, 0, -90]) {
     if (render_part == 0) {
         // Bottom Tub shifted to the right
@@ -277,10 +276,27 @@ rotate([0, 0, -90]) {
             }
         }
     } else if (render_part == 1) {
+        // The top case's faceplate goes from p2_front_top to p3_peak.
+        // To lay the face perfectly flat on the print bed, we align it to Z=0 and flip it upside down.
+        rotate([180, 0, 0])
+        rotate([-face_angle, 0, 0])
+        translate([0, -p2_front_top[0], -p2_front_top[1]])
         case_top();
     } else if (render_part == 2) {
+        // The back face goes from p5_foot_back to p3_peak.
+        // This is the largest flat surface to print case_bottom without supports.
+        // We translate p5 to origin, and rotate so this face lays flat on the Z=0 plane.
+        back_dy = p3_peak[0] - p5_foot_back[0];
+        back_dz = p3_peak[1] - p5_foot_back[1];
+        back_angle = atan2(back_dz, back_dy);
+        
+        rotate([-back_angle, 0, 0])
+        translate([0, -p5_foot_back[0], -p5_foot_back[1]])
         case_bottom();
     } else if (render_part == 3) {
+        // The bracket is natively drawn centered around Z=0 (meaning half of it is underground).
+        // We translate it up by half its thickness so it sits flush on the Z=0 plane.
+        translate([0, 0, bracket_t / 2])
         blue_bracket();
     } else if (render_part == 4) {
         color("SlateGray", 1) case_top();
