@@ -15,23 +15,14 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup Deno
-        uses: denoland/setup-deno@v2
-        with:
-          deno-version: v2.x # Explicitly targets Deno 2.x for the new global install syntax
-
-      - name: Install scad2stl
-        run: |
-          git clone https://github.com/code4fukui/scad2stl.git
-          cd scad2stl
-          deno run -A download-latest-release-openscad.js
-          deno install --global -A --name=scad2stl scad2stl.js
+      - name: Install OpenSCAD
+        run: sudo apt-get update && sudo apt-get install -y openscad
 
       - name: Convert SCAD to STL
         run: |
-          scad2stl part_top.scad
-          scad2stl part_bottom.scad
-          scad2stl part_bracket.scad
+          openscad -o part_top.stl part_top.scad
+          openscad -o part_bottom.stl part_bottom.scad
+          openscad -o part_bracket.stl part_bracket.scad
 
       - name: Upload STL Artifact
         uses: actions/upload-artifact@v4
