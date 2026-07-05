@@ -40,6 +40,10 @@ x_offset = 43;
 y_offset = screen_l/2 + 10;  
 side_y_spacing = 40;        
 
+// PCB Mounting Holes
+pcb_x_spacing = 84;
+pcb_y_spacing = 115;
+
 front_nut_drop = 5;  // Depth of captive nut below the seam (Front)
 back_nut_drop = 15;  // Depth of captive nut below the seam (Back)
 
@@ -131,7 +135,7 @@ module master_shell() {
             // Screen Cutout
             translate([0, 0, -bracket_depth/2 + 1]) cube([screen_w, screen_l, bracket_depth + 2], center=true);
             
-            // Fastener Holes & Counterbores
+            // Bracket Fastener Holes & Counterbores
             for (x = [-x_offset, x_offset]) {
                 for (y = [-side_y_spacing, 0, side_y_spacing]) {
                     // 3.5mm Through-hole
@@ -139,6 +143,17 @@ module master_shell() {
                     
                     // 6.5mm Counterbore (Cuts 3.2mm deep for an M3 socket head cap screw)
                     // Z=0 is the sloped surface. Translating a 20mm center-cut by 6.8 places its bottom exactly at Z = -3.2.
+                    translate([x, y, 6.8]) cylinder(h=20, d=6.5, center=true, $fn=30); 
+                }
+            }
+
+            // PCB Fastener Holes & Counterbores
+            for (x = [-pcb_x_spacing/2, pcb_x_spacing/2]) {
+                for (y = [-pcb_y_spacing/2, pcb_y_spacing/2]) {
+                    // 3.5mm Through-hole
+                    translate([x, y, -20]) cylinder(h=100, d=hole_d, center=true, $fn=30); 
+                    
+                    // 6.5mm Counterbore
                     translate([x, y, 6.8]) cylinder(h=20, d=6.5, center=true, $fn=30); 
                 }
             }
