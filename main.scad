@@ -27,8 +27,8 @@ lip_t = 1.5;
 lip_tol = 0.2;  
 
 // Side Profile Coordinates [Y, Z]
-p1_front_bot  = [-20, 0];      
-p2_front_top  = [-20, 34];     
+p1_front_bot  = [-60, 0];      
+p2_front_top  = [-60, 34];     
 p3_peak       = [140, 89];     
 p5_foot_back  = [180, 0];      
 p6_foot_front = [160, 0];      
@@ -50,8 +50,8 @@ back_nut_drop = 15;  // Depth of captive nut below the seam (Back)
 // Clamshell Fastener Locations 
 // SHIFTED: X moved to ±42 to permanently fuse the pillars to the inner side walls
 boss_locs = [ 
-    [-42, -10],  // Front Left 
-    [ 42, -10],  // Front Right
+    [-42, -40],  // Front Left (Moved forward to secure the new extended chin)
+    [ 42, -40],  // Front Right
     [-42, 130],  // Back Left 
     [ 42, 130]   // Back Right
 ];
@@ -60,8 +60,9 @@ boss_locs = [
 dy = p3_peak[0] - p2_front_top[0];
 dz = p3_peak[1] - p2_front_top[1];
 face_angle = atan2(dz, dy);
-face_cy = p2_front_top[0] + (dy / 2);
-face_cz = p2_front_top[1] + (dz / 2);
+// Hardcoded to keep the screen exactly where it was relative to the top peak, allocating all 40mm of new space to the bottom chin.
+face_cy = 60;
+face_cz = 67;
 
 // Stepped Seam Math
 cut_drop = 24; 
