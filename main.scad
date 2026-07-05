@@ -154,8 +154,8 @@ module master_shell() {
             // Bracket Fastener Holes & Counterbores
             for (x = [-x_offset, x_offset]) {
                 for (y = [-side_y_spacing, 0, side_y_spacing]) {
-                    // 3.5mm Through-hole
-                    translate([x, y, -20]) cylinder(h=100, d=hole_d, center=true, $fn=30); 
+                    // 3.5mm Through-hole (Shortened to prevent drilling into internal bosses)
+                    translate([x, y, -15]) cylinder(h=40, d=hole_d, center=true, $fn=30); 
                     
                     // 6.5mm Counterbore (Cuts 3.2mm deep for an M3 socket head cap screw)
                     // Z=0 is the sloped surface. Translating a 20mm center-cut by 6.8 places its bottom exactly at Z = -3.2.
@@ -166,8 +166,8 @@ module master_shell() {
             // PCB Fastener Holes & Counterbores
             for (x = [-pcb_x_spacing/2, pcb_x_spacing/2]) {
                 for (y = [-pcb_y_spacing/2, pcb_y_spacing/2]) {
-                    // 3.5mm Through-hole
-                    translate([x, y, -20]) cylinder(h=100, d=hole_d, center=true, $fn=30); 
+                    // 3.5mm Through-hole (Shortened to prevent laser-beaming into the back bosses!)
+                    translate([x, y, -5]) cylinder(h=20, d=hole_d, center=true, $fn=30); 
                     
                     // 6.5mm Counterbore
                     translate([x, y, 6.8]) cylinder(h=20, d=6.5, center=true, $fn=30); 
