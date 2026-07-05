@@ -122,6 +122,22 @@ module master_shell() {
                     }
                 }
             }
+
+            // Screen Mounting Pocket (Frame & Standoffs)
+            // Adds material to the inside of the faceplate to sink the PCB to Z=-6.
+            // Spans from Z=-6 to Z=-2 (1mm overlap into the 3mm faceplate wall).
+            translate([0, face_cy, face_cz])
+            rotate([face_angle, 0, 0]) {
+                // Rectangular Frame to deepen the cutout pocket
+                translate([0, 0, -4]) cube([screen_w + 12, screen_l + 12, 4], center=true);
+                
+                // PCB Standoff Bosses (Square for maximum shear strength into the frame)
+                for (x = [-pcb_x_spacing/2, pcb_x_spacing/2]) {
+                    for (y = [-pcb_y_spacing/2, pcb_y_spacing/2]) {
+                        translate([x, y, -4]) cube([10, 10, 4], center=true);
+                    }
+                }
+            }
         }
 
         // Screwholes
