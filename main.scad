@@ -2,8 +2,8 @@
 // 0 = Exploded Assembly View
 // 1 = Top Case Half (Lid)
 // 2 = Bottom Case Half (Tub)
-// 3 = Blue Bracket (Transverse - Prints 3x)
-// 4 = X-Ray Assembly (See brackets locked inside)
+// 3 = U-Shaped Clamping Gasket
+// 4 = X-Ray Assembly
 render_part = 0;
 
 // --- PARAMETERS ---
@@ -71,12 +71,34 @@ function get_seam_z(y) =
     (y >= p3_peak[0])      ? p3_peak[1] - cut_drop :
     p2_front_top[1] - cut_drop + (y - p2_front_top[0]) * ((p3_peak[1] - p2_front_top[1]) / (p3_peak[0] - p2_front_top[0]));
 
-// --- MODULES: BRACKETS ---
-module blue_bracket() {
+// --- MODULES: U-SHAPED GASKET ---
+module u_gasket() {
+    gasket_t = 6; // 6mm thick for rigidity and to hold captive hex nuts
+    
+    color("DodgerBlue")
     difference() {
-        cube([enc_width, bracket_w, bracket_t], center=true); 
-        translate([-x_offset, 0, 0]) rotate([0, 0, 30]) cylinder(h=15, d=6.6, center=true, $fn=6);
-        translate([ x_offset, 0, 0]) rotate([0, 0, 30]) cylinder(h=15, d=6.6, center=true, $fn=6);
+        union() {
+            // Left Arm (Spans from X=-35 to X=-47 to safely clamp the edges of the 76mm PCB)
+            translate([-41, 0, 0]) cube([12, 100, gasket_t], center=true);
+            // Right Arm (Spans from X=35 to X=47)
+            translate([41, 0, 0]) cube([12, 100, gasket_t], center=true);
+            // Top Bridge (Connects the two arms across the top)
+            translate([0, 44, 0]) cube([94, 12, gasket_t], center=true);
+        }
+        
+        // 6x Mounting Holes & Hex Nut Pockets
+        for (x = [-x_offset, x_offset]) {
+            for (y = [-side_y_spacing, 0, side_y_spacing]) {
+                // 3.5mm Through-hole
+                translate([x, y, 0]) cylinder(h=gasket_t + 2, d=hole_d, center=true, $fn=30);
+                
+                // Hex nut pocket on the back side
+                // Z=0 is center of 6mm thick gasket. Back face is Z=3.
+                // We want a 3.2mm deep pocket, so it goes from Z=3 down to Z=-0.2.
+                // Rotated by 30 degrees so the flat sides (not the sharp corners) face the thin 4mm side edges!
+                translate([x, y, 3 - 3.2]) rotate([0, 0, 30]) cylinder(h=3.5, d=6.6, center=false, $fn=6);
+            }
+        }
     }
 }
 
@@ -110,14 +132,17 @@ module master_shell() {
                 }
             }
 
-            // Internal Crush Tubes for Display Brackets
+            // Internal Crush Tubes for U-Gasket
+            // Reduced height: The front gasket is Z=-6. We leave 1.6mm for the PCB.
+            // So these tubes end at Z=-7.6 to provide a perfectly measured clamping shelf.
             intersection() {
                 outer_solid();
                 translate([0, face_cy, face_cz])
                 rotate([face_angle, 0, 0]) {
                     for (x = [-x_offset, x_offset]) {
                         for (y = [-side_y_spacing, 0, side_y_spacing]) {
-                            translate([x, y, -bracket_depth]) 
+                            // Z=-7.6 is the bottom of the standoff. Cube h=100 goes UP into the faceplate.
+                            translate([x, y, -7.6]) 
                                 translate([-6, -6, 0]) cube([12, 12, 100]);
                         }
                     }
@@ -175,12 +200,6 @@ module master_shell() {
                 }
             }
 
-            // Bracket Slots
-            translate([0, 0, -bracket_depth - (bracket_t/2)]) {
-                for (y = [-side_y_spacing, 0, side_y_spacing]) {
-                    translate([0, y, 0]) cube([enc_width + 10, bracket_w + tol, bracket_t + tol], center=true);
-                }
-            }
         }
     }
 }
@@ -300,10 +319,10 @@ rotate([0, 0, -90]) {
             
             translate([0, face_cy, face_cz])
             rotate([face_angle, 0, 0]) {
-                translate([0, 0, -bracket_depth - (bracket_t/2)]) {
-                    for (y = [-side_y_spacing, 0, side_y_spacing]) {
-                        color("DodgerBlue") translate([0, y, 0]) blue_bracket();
-                    }
+                // The U-gasket sits directly against the Z=-7.6 crush tubes.
+                // Since gasket_t=6, its center is dropped by 3mm.
+                translate([0, 0, -10.6]) {
+                    u_gasket();
                 }
             }
         }
@@ -315,31 +334,22 @@ rotate([0, 0, -90]) {
         translate([0, -p2_front_top[0], -p2_front_top[1]])
         case_top();
     } else if (render_part == 2) {
-        // The back face goes from p5_foot_back to p3_peak.
-        // This is the largest flat surface to print case_bottom without supports.
-        // We translate p5 to origin, and rotate so this face lays flat on the Z=0 plane.
-        back_dy = p3_peak[0] - p5_foot_back[0];
-        back_dz = p3_peak[1] - p5_foot_back[1];
-        back_angle = atan2(back_dz, back_dy);
-        
-        rotate([-back_angle, 0, 0])
-        translate([0, -p5_foot_back[0], -p5_foot_back[1]])
+        // The natural base of the machine (from Y=-70 to Y=180) is perfectly flat on Z=0!
+        // We simply translate it by -55 in Y to perfectly center its 250mm length around the origin.
+        translate([0, -55, 0])
         case_bottom();
     } else if (render_part == 3) {
-        // The bracket is natively drawn centered around Z=0 (meaning half of it is underground).
-        // We translate it up by half its thickness so it sits flush on the Z=0 plane.
-        translate([0, 0, bracket_t / 2])
-        blue_bracket();
+        // Lay U-gasket flat on bed
+        translate([0, 0, 3])
+        u_gasket();
     } else if (render_part == 4) {
         color("SlateGray", 1) case_top();
         color("DarkSlateGray", 1) case_bottom();
         
         translate([0, face_cy, face_cz])
         rotate([face_angle, 0, 0]) {
-            translate([0, 0, -bracket_depth - (bracket_t/2)]) {
-                for (y = [-side_y_spacing, 0, side_y_spacing]) {
-                    color("DodgerBlue") translate([0, y, 0]) blue_bracket();
-                }
+            translate([0, 0, -10.6]) {
+                u_gasket();
             }
         }
     }
