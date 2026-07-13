@@ -102,6 +102,31 @@ module u_gasket() {
     }
 }
 
+// --- MODULES: PN532 SLIDER ENCLOSURE ---
+module pn532_slider() {
+    w = 40.5;  // Module width
+    h = 42.8;  // Module height
+    d = 2.3;   // Module depth (PCB + IC)
+    t = 2;     // Wall thickness
+    lip = 1.5; // Overhang retaining lip
+    
+    union() {
+        // Left Rail
+        translate([-(w/2 + t/2), -t/2, (d + t)/2]) cube([t, h + t, d + t], center=true);
+        // Right Rail
+        translate([ (w/2 + t/2), -t/2, (d + t)/2]) cube([t, h + t, d + t], center=true);
+        // Bottom Stopper
+        translate([0, -(h/2 + t/2), (d + t)/2]) cube([w + t*2, t, d + t], center=true);
+        
+        // Left Lip
+        translate([-(w/2 - lip/2), -t/2, d + t/2]) cube([lip, h + t, t], center=true);
+        // Right Lip
+        translate([ (w/2 - lip/2), -t/2, d + t/2]) cube([lip, h + t, t], center=true);
+        // Bottom Lip
+        translate([0, -(h/2 - lip/2), d + t/2]) cube([w, lip, t], center=true);
+    }
+}
+
 // --- MODULES: SHELL & LAP JOINTS ---
 module outer_solid() {
     rotate([90, 0, 90]) 
@@ -286,6 +311,20 @@ module case_bottom() {
                 bottom_mask();
             }
             lip_safe_positive(); 
+            
+            // PN532 Slider Enclosure
+            // Mounted on the inner side of the back face (Z=3 in rotated frame)
+            back_dy_p = p3_peak[0] - p5_foot_back[0];
+            back_dz_p = p3_peak[1] - p5_foot_back[1];
+            back_angle_p = atan2(back_dz_p, back_dy_p);
+            back_len_p = sqrt(back_dy_p*back_dy_p + back_dz_p*back_dz_p);
+            
+            translate([0, p5_foot_back[0], p5_foot_back[1]])
+            rotate([back_angle_p, 0, 0])
+            // Shifted slightly down the slope by 5mm to avoid the clamshell seam lip
+            // True wall thickness is 3mm offset PLUS the projection of the Z=-1 hack in master_shell
+            translate([0, (back_len_p / 2) - 5, 3 - cos(back_angle_p)]) 
+            pn532_slider();
         }
         
         // Side-Loading Captive Hex Nut Pockets
