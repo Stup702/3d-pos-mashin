@@ -4,9 +4,9 @@ include <main.scad>
 render_part = -1;
 
 // Calculate the exact distance from the front edge to the pocket center along the sloped face
-dy = face_cy - p2_front_top[0];
-dz = face_cz - p2_front_top[1];
-face_distance = sqrt(dy*dy + dz*dz);
+dist_y = face_cy - p2_front_top[0];
+dist_z = face_cz - p2_front_top[1];
+face_distance = sqrt(dist_y*dist_y + dist_z*dist_z);
 
 // A bounding box to isolate just the screen mounting pocket
 // We add 20mm padding to capture the full balcony, corner blocks, and some surrounding shell
