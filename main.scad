@@ -79,20 +79,21 @@ module nfc_logo(depth=1, r=15) {
         
         // "NFC" text
         translate([0, -r*0.35]) 
-        text("NFC", size=r*0.45, font="Arial:style=Bold", halign="center", valign="center");
+        text("NFC", size=r*0.35, font="Arial:style=Bold", halign="center", valign="center");
         
         // Arcs (WiFi style)
+        translate([0, r*0.15])
         intersection() {
             union() {
                 // Arc 1 (inner)
                 difference() {
-                    circle(r=r*0.35, $fn=60);
-                    circle(r=r*0.15, $fn=60);
+                    circle(r=r*0.30, $fn=60);
+                    circle(r=r*0.10, $fn=60);
                 }
                 // Arc 2 (outer)
                 difference() {
-                    circle(r=r*0.65, $fn=60);
-                    circle(r=r*0.45, $fn=60);
+                    circle(r=r*0.55, $fn=60);
+                    circle(r=r*0.35, $fn=60);
                 }
             }
             // Wedge to keep only the top part (a 90-degree V shape)
