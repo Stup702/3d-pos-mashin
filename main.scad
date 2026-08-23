@@ -2,8 +2,7 @@
 // 0 = Exploded Assembly View
 // 1 = Top Case Half (Lid)
 // 2 = Bottom Case Half (Tub)
-// 3 = U-Shaped Clamping Gasket
-// 4 = X-Ray Assembly
+// 3 = X-Ray Assembly
 render_part = 0;
 
 // --- PARAMETERS ---
@@ -12,13 +11,20 @@ enc_width = 100;
 wall = 3;
 
 // Screen Dimensions
-screen_w = 76;
-screen_l = 121;
+screen_w = 75.8;
+screen_l = 120.8;
+screen_t = 7.3;               // total screen thickness (glass to PCB back) to sit flush
+screen_hole_x_spacing = 68;
+screen_hole_y_spacing = 113;
+screen_boss_d = 7;            // PLACEHOLDER — verify actual boss OD with calipers before printing
+screen_boss_h = 5;             // boss length per DFRobot spec
+balcony_t = screen_boss_h;     // shelf thickness matched to boss length so it's fully sleeved
+screen_boss_relief_clearance = 0.35;  // snug sleeve fit, not a loose pass-through — FDM tolerance only
+screen_screw_clear_d = 2.8;   // M2.5 clearance hole through the corner block
+corner_block_h = 4.5;         // gives the screw head a solid bearing surface below the sleeve
+screen_screw_len = 10;        // M2.5 x 10mm (vs. stock M2.5 x 8mm) — gives 4.5mm block thickness and ~5.5mm of thread engagement in the boss
 
 // Bracket Dimensions
-bracket_w = 12;
-bracket_t = 3;
-tol = 0.5; 
 bracket_depth = 14; 
 
 // Lap Joint Parameters
@@ -32,17 +38,7 @@ p2_front_top  = [-70, 34];
 p3_peak       = [140, 89];     
 p5_foot_back  = [180, 0];      
 p6_foot_front = [160, 0];      
-p7_neck       = [140, 30];     
-
-// Fastener Locations
-hole_d = 3.5;              
-x_offset = 43; 
-y_offset = screen_l/2 + 10;  
-side_y_spacing = 40;        
-
-// PCB Mounting Holes
-pcb_x_spacing = 84;
-pcb_y_spacing = 115;
+p7_neck       = [140, 30];
 
 front_nut_drop = 5;  // Depth of captive nut below the seam (Front)
 back_nut_drop = 15;  // Depth of captive nut below the seam (Back)
@@ -71,36 +67,6 @@ function get_seam_z(y) =
     (y >= p3_peak[0])      ? p3_peak[1] - cut_drop :
     p2_front_top[1] - cut_drop + (y - p2_front_top[0]) * ((p3_peak[1] - p2_front_top[1]) / (p3_peak[0] - p2_front_top[0]));
 
-// --- MODULES: U-SHAPED GASKET ---
-module u_gasket() {
-    gasket_t = 6; // 6mm thick for rigidity and to hold captive hex nuts
-    
-    color("DodgerBlue")
-    difference() {
-        union() {
-            // Left Arm (Spans from X=-35 to X=-47 to safely clamp the edges of the 76mm PCB)
-            translate([-41, 0, 0]) cube([12, 100, gasket_t], center=true);
-            // Right Arm (Spans from X=35 to X=47)
-            translate([41, 0, 0]) cube([12, 100, gasket_t], center=true);
-            // Top Bridge (Connects the two arms across the top)
-            translate([0, 44, 0]) cube([94, 12, gasket_t], center=true);
-        }
-        
-        // 6x Mounting Holes & Hex Nut Pockets
-        for (x = [-x_offset, x_offset]) {
-            for (y = [-side_y_spacing, 0, side_y_spacing]) {
-                // 3.5mm Through-hole
-                translate([x, y, 0]) cylinder(h=gasket_t + 2, d=hole_d, center=true, $fn=30);
-                
-                // Hex nut pocket on the back side
-                // Z=0 is center of 6mm thick gasket. Back face is Z=3.
-                // We want a 3.2mm deep pocket, so it goes from Z=3 down to Z=-0.2.
-                // Rotated by 30 degrees so the flat sides (not the sharp corners) face the thin 4mm side edges!
-                translate([x, y, 3 - 3.2]) rotate([0, 0, 30]) cylinder(h=3.5, d=6.6, center=false, $fn=6);
-            }
-        }
-    }
-}
 
 // --- MODULES: PN532 SLIDER ENCLOSURE ---
 module pn532_slider() {
@@ -157,35 +123,28 @@ module master_shell() {
                 }
             }
 
-            // Internal Crush Tubes for U-Gasket
-            // Reduced height: The front gasket is Z=-6. We leave 1.6mm for the PCB.
-            // So these tubes end at Z=-7.6 to provide a perfectly measured clamping shelf.
-            intersection() {
-                outer_solid();
-                translate([0, face_cy, face_cz])
-                rotate([face_angle, 0, 0]) {
-                    for (x = [-x_offset, x_offset]) {
-                        for (y = [-side_y_spacing, 0, side_y_spacing]) {
-                            // Z=-7.6 is the bottom of the standoff. Cube h=100 goes UP into the faceplate.
-                            translate([x, y, -7.6]) 
-                                translate([-6, -6, 0]) cube([12, 12, 100]);
-                        }
-                    }
-                }
-            }
-
-            // Screen Mounting Pocket (Frame & Standoffs)
-            // Adds material to the inside of the faceplate to sink the PCB to Z=-6.
-            // Spans from Z=-6 to Z=-2 (1mm overlap into the 3mm faceplate wall).
+            // Screen Mounting Pocket (Frame Walls, Balcony & Corner Blocks)
             translate([0, face_cy, face_cz])
             rotate([face_angle, 0, 0]) {
-                // Rectangular Frame to deepen the cutout pocket
-                translate([0, 0, -4]) cube([screen_w + 12, screen_l + 12, 4], center=true);
-                
-                // PCB Standoff Bosses (Square for maximum shear strength into the frame)
-                for (x = [-pcb_x_spacing/2, pcb_x_spacing/2]) {
-                    for (y = [-pcb_y_spacing/2, pcb_y_spacing/2]) {
-                        translate([x, y, -4]) cube([10, 10, 4], center=true);
+                // 1. Frame Walls (connects faceplate outer skin down to the balcony)
+                translate([0, 0, -screen_t/2])
+                    difference() {
+                        cube([screen_w + 12, screen_l + 12, screen_t], center=true);
+                        cube([screen_w, screen_l, screen_t + 2], center=true);
+                    }
+                    
+                // 2. Balcony Plate (starts perfectly at Z = -screen_t to hold the display flush)
+                translate([0, 0, -screen_t - balcony_t/2])
+                    difference() {
+                        cube([screen_w + 12, screen_l + 12, balcony_t], center=true);
+                        cube([screen_w - 18, screen_l - 18, balcony_t + 2], center=true);
+                    }
+                    
+                // 3. Corner Blocks (hanging directly below the balcony)
+                for (x = [-screen_hole_x_spacing/2, screen_hole_x_spacing/2]) {
+                    for (y = [-screen_hole_y_spacing/2, screen_hole_y_spacing/2]) {
+                        translate([x, y, -screen_t - balcony_t - corner_block_h/2]) 
+                            cube([12, 12, corner_block_h], center=true);
                     }
                 }
             }
@@ -199,29 +158,25 @@ module master_shell() {
         // Faceplate Operations
         translate([0, face_cy, face_cz])
         rotate([face_angle, 0, 0]) {
-            // Screen Cutout
-            translate([0, 0, -bracket_depth/2 + 1]) cube([screen_w, screen_l, bracket_depth + 2], center=true);
+            // 1. Faceplate Cutout (Outer glass & screen body)
+            // Cuts from Z=10 down to exactly Z=-screen_t (flush glass)
+            translate([0, 0, (10 - screen_t)/2]) cube([screen_w, screen_l, 10 + screen_t], center=true);
             
-            // Bracket Fastener Holes & Counterbores
-            for (x = [-x_offset, x_offset]) {
-                for (y = [-side_y_spacing, 0, side_y_spacing]) {
-                    // 3.5mm Through-hole (Shortened to prevent drilling into internal bosses)
-                    translate([x, y, -15]) cylinder(h=40, d=hole_d, center=true, $fn=30); 
-                    
-                    // 6.5mm Counterbore (Cuts 3.2mm deep for an M3 socket head cap screw)
-                    // Z=0 is the sloped surface. Translating a 20mm center-cut by 6.8 places its bottom exactly at Z = -3.2.
-                    translate([x, y, 6.8]) cylinder(h=20, d=6.5, center=true, $fn=30); 
-                }
-            }
-
-            // PCB Fastener Holes & Counterbores
-            for (x = [-pcb_x_spacing/2, pcb_x_spacing/2]) {
-                for (y = [-pcb_y_spacing/2, pcb_y_spacing/2]) {
-                    // 3.5mm Through-hole (Shortened to prevent laser-beaming into the back bosses!)
-                    translate([x, y, -5]) cylinder(h=20, d=hole_d, center=true, $fn=30); 
-                    
-                    // 6.5mm Counterbore
-                    translate([x, y, 6.8]) cylinder(h=20, d=6.5, center=true, $fn=30); 
+            // 2. Deep cavity for components
+            // Cuts from Z=-screen_t down by bracket_depth to clear all protruding components
+            translate([0, 0, -screen_t - bracket_depth/2]) 
+                cube([screen_w - 18, screen_l - 18, bracket_depth], center=true);
+            
+            // 3. Corner boss relief holes & screw clearance
+            for (x = [-screen_hole_x_spacing/2, screen_hole_x_spacing/2]) {
+                for (y = [-screen_hole_y_spacing/2, screen_hole_y_spacing/2]) {
+                    // Snug sleeve fit for the factory boss (through the balcony)
+                    translate([x, y, -screen_t - balcony_t/2]) 
+                        cylinder(h=balcony_t + 2, d=screen_boss_d + screen_boss_relief_clearance, center=true, $fn=30);
+                        
+                    // M2.5 Clearance hole through the corner block
+                    translate([x, y, -20]) 
+                        cylinder(h=40, d=screen_screw_clear_d, center=true, $fn=30);
                 }
             }
 
@@ -352,19 +307,8 @@ rotate([0, 0, -90]) {
         // Bottom Tub shifted to the right
         translate([75, 0, 0]) case_bottom();
         
-        // Top Lid and Brackets grouped and shifted to the left
-        translate([-75, 0, 0]) {
-            case_top();
-            
-            translate([0, face_cy, face_cz])
-            rotate([face_angle, 0, 0]) {
-                // The U-gasket sits directly against the Z=-7.6 crush tubes.
-                // Since gasket_t=6, its center is dropped by 3mm.
-                translate([0, 0, -10.6]) {
-                    u_gasket();
-                }
-            }
-        }
+        // Top Lid shifted to the left
+        translate([-75, 0, 0]) case_top();
     } else if (render_part == 1) {
         // The top case's faceplate goes from p2_front_top to p3_peak.
         // To lay the face perfectly flat on the print bed, we align it to Z=0 and flip it upside down.
@@ -378,18 +322,7 @@ rotate([0, 0, -90]) {
         translate([0, -55, 0])
         case_bottom();
     } else if (render_part == 3) {
-        // Lay U-gasket flat on bed
-        translate([0, 0, 3])
-        u_gasket();
-    } else if (render_part == 4) {
         color("SlateGray", 1) case_top();
         color("DarkSlateGray", 1) case_bottom();
-        
-        translate([0, face_cy, face_cz])
-        rotate([face_angle, 0, 0]) {
-            translate([0, 0, -10.6]) {
-                u_gasket();
-            }
-        }
     }
 }
