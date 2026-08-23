@@ -106,7 +106,7 @@ module nfc_logo(depth=1, r=15) {
 module pn532_slider() {
     w = 41.5;  // Module width (40.5mm physical + 0.5mm tolerance on both sides)
     h = 42.8;  // Module height
-    d = 2.3;   // Module depth (PCB + IC)
+    d = 3.3;   // Module depth (2.3mm physical + 1.0mm tolerance for slide clearance)
     t = 2;     // Wall thickness
     lip = 1.5; // Overhang retaining lip
     
