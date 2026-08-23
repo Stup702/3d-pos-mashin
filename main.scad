@@ -130,7 +130,8 @@ module master_shell() {
                 translate([0, 0, -screen_t/2])
                     difference() {
                         cube([screen_w + 12, screen_l + 12, screen_t], center=true);
-                        cube([screen_w, screen_l, screen_t + 2], center=true);
+                        // Shifted -0.1 in X and widened by 0.2 to give the flex cable a 0.2mm channel on one side
+                        translate([-0.1, 0, 0]) cube([screen_w + 0.2, screen_l, screen_t + 2], center=true);
                     }
                     
                 // 2. Balcony Plate (starts perfectly at Z = -screen_t to hold the display flush)
@@ -160,7 +161,8 @@ module master_shell() {
         rotate([face_angle, 0, 0]) {
             // 1. Faceplate Cutout (Outer glass & screen body)
             // Cuts from Z=10 down to exactly Z=-screen_t (flush glass)
-            translate([0, 0, (10 - screen_t)/2]) cube([screen_w, screen_l, 10 + screen_t], center=true);
+            // Shifted -0.1 in X and widened by 0.2 to match the flex cable channel
+            translate([-0.1, 0, (10 - screen_t)/2]) cube([screen_w + 0.2, screen_l, 10 + screen_t], center=true);
             
             // 2. Deep cavity for components
             // Cuts from Z=-screen_t down by bracket_depth to clear all protruding components
