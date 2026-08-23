@@ -104,7 +104,7 @@ module nfc_logo(depth=1, r=15) {
 
 // --- MODULES: PN532 SLIDER ENCLOSURE ---
 module pn532_slider() {
-    w = 40.5;  // Module width
+    w = 41.5;  // Module width (40.5mm physical + 0.5mm tolerance on both sides)
     h = 42.8;  // Module height
     d = 2.3;   // Module depth (PCB + IC)
     t = 2;     // Wall thickness
