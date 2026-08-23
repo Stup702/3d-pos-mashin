@@ -68,6 +68,39 @@ function get_seam_z(y) =
     p2_front_top[1] - cut_drop + (y - p2_front_top[0]) * ((p3_peak[1] - p2_front_top[1]) / (p3_peak[0] - p2_front_top[0]));
 
 
+// --- MODULES: NFC LOGO ---
+module nfc_logo(depth=1, r=15) {
+    linear_extrude(height=depth, center=true) {
+        // Outer ring
+        difference() {
+            circle(r=r, $fn=60);
+            circle(r=r*0.8, $fn=60);
+        }
+        
+        // "NFC" text
+        translate([0, -r*0.35]) 
+        text("NFC", size=r*0.45, font="Arial:style=Bold", halign="center", valign="center");
+        
+        // Arcs (WiFi style)
+        intersection() {
+            union() {
+                // Arc 1 (inner)
+                difference() {
+                    circle(r=r*0.35, $fn=60);
+                    circle(r=r*0.15, $fn=60);
+                }
+                // Arc 2 (outer)
+                difference() {
+                    circle(r=r*0.65, $fn=60);
+                    circle(r=r*0.45, $fn=60);
+                }
+            }
+            // Wedge to keep only the top part (a 90-degree V shape)
+            polygon([ [0,0], [-r*2, r*2], [r*2, r*2] ]);
+        }
+    }
+}
+
 // --- MODULES: PN532 SLIDER ENCLOSURE ---
 module pn532_slider() {
     w = 40.5;  // Module width
@@ -183,6 +216,18 @@ module master_shell() {
             }
 
         }
+        
+        // NFC Logo Engraving (Outside Back Face)
+        // Center it behind the slider which is at Y_local = (back_len_p / 2) - 5
+        // Local +Z points INTO the case. We rotate 180 around Y so +Z points OUTWARD,
+        // which makes the text readable from the outside, and Y remains UP.
+        // We then translate Z=-0.5 so the 1.2mm deep logo cuts from Z=0.1 down to Z=-1.1 (into the case wall).
+        translate([0, p5_foot_back[0], p5_foot_back[1]])
+        rotate([atan2(p3_peak[1] - p5_foot_back[1], p3_peak[0] - p5_foot_back[0]), 0, 0])
+        translate([0, (sqrt(pow(p3_peak[0] - p5_foot_back[0], 2) + pow(p3_peak[1] - p5_foot_back[1], 2)) / 2) - 5, 0]) 
+        rotate([0, 180, 0])
+        translate([0, 0, -0.5])
+        nfc_logo(depth=1.2, r=12);
     }
 }
 
