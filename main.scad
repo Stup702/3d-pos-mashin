@@ -13,14 +13,15 @@ wall = 3;
 // Screen Dimensions
 screen_w = 75.8;
 screen_l = 120.8;
-screen_t = 7.3;               // total screen thickness (glass to PCB back) to sit flush
+screen_t = 7.8;               // total screen thickness (glass to PCB back) + 0.5mm extra drop to ensure flush fit
+screen_ribbon_gap = 1.5;      // 1.5mm total clearance channel on one side for flex cables
 screen_hole_x_spacing = 68;
 screen_hole_y_spacing = 113;
 screen_boss_d = 5.5;          // updated from placeholder, user estimates 5.5mm
 screen_boss_h = 5;             // boss length per DFRobot spec
 balcony_t = screen_boss_h;     // shelf thickness matched to boss length so it's fully sleeved
-screen_boss_relief_clearance = 0.35;  // snug sleeve fit, not a loose pass-through — FDM tolerance only
-screen_screw_clear_d = 2.8;   // M2.5 clearance hole through the corner block
+screen_boss_relief_clearance = 0.50;  // 6.00mm sleeve hole diameter (Option A: gentle thumb-press fit)
+screen_screw_clear_d = 3.0;   // M2.5 free-running clearance hole through the corner block
 corner_block_h = 4.5;         // gives the screw head a solid bearing surface below the sleeve
 screen_screw_len = 10;        // M2.5 x 10mm (vs. stock M2.5 x 8mm) — gives 4.5mm block thickness and ~5.5mm of thread engagement in the boss
 
@@ -164,8 +165,8 @@ module master_shell() {
                 translate([0, 0, -screen_t/2])
                     difference() {
                         cube([screen_w + 12, screen_l + 12, screen_t], center=true);
-                        // Shifted -0.5 in X and widened by 1.0 to give the flex cable a 1.0mm channel on one side
-                        translate([-0.5, 0, 0]) cube([screen_w + 1.0, screen_l, screen_t + 2], center=true);
+                        // Shifted -screen_ribbon_gap/2 in X and widened by screen_ribbon_gap to give the flex cable a dedicated channel
+                        translate([-screen_ribbon_gap / 2, 0, 0]) cube([screen_w + screen_ribbon_gap + 0.4, screen_l + 0.4, screen_t + 2], center=true);
                     }
                     
                 // 2. Balcony Plate (starts perfectly at Z = -screen_t to hold the display flush)
@@ -194,9 +195,9 @@ module master_shell() {
         translate([0, face_cy, face_cz])
         rotate([face_angle, 0, 0]) {
             // 1. Faceplate Cutout (Outer glass & screen body)
-            // Cuts from Z=10 down to exactly Z=-screen_t (flush glass)
-            // Shifted -0.5 in X and widened by 1.0 to match the flex cable channel
-            translate([-0.5, 0, (10 - screen_t)/2]) cube([screen_w + 1.0, screen_l, 10 + screen_t], center=true);
+            // Cuts from Z=10 down to exactly Z=-4 to cleanly punch through the 3mm faceplate skin.
+            // Shifted -screen_ribbon_gap/2 in X and widened by screen_ribbon_gap to match the flex cable channel
+            translate([-screen_ribbon_gap / 2, 0, 3]) cube([screen_w + screen_ribbon_gap, screen_l, 14], center=true);
             
             // 2. Deep cavity for components
             // Cuts from Z=-screen_t down by bracket_depth to clear all protruding components
