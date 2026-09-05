@@ -10,7 +10,7 @@ render_part = 0
 
 # --- PARAMETERS ---
 enc_width = 100.0 
-wall = 3.5
+wall = 4.0
 corner_r = 4.0
 base_chamfer = 1.5
 
@@ -74,7 +74,7 @@ def get_seam_z(y):
 
 # Lap Joint Parameters
 lip_h = 2.0
-lip_t = 1.5
+lip_t = 1.8
 lip_tol = 0.2
 
 print("Generating full POS terminal enclosure with build123d...")
@@ -191,9 +191,17 @@ bottom_mask_solid = split_cutter.part
 # 3. INTERLOCKING LAP JOINTS
 # ==========================================
 with BuildPart() as pos_lip:
-    with BuildSketch(Plane.YZ):
-        offset(Polygon([p1, p2, p3, p5, p6, p7]), amount=-lip_t)
-    outer_lip_ext = extrude(amount=(enc_width - 2 * lip_t) / 2, both=True, mode=Mode.PRIVATE)
+    # Outer lip solid with concentric corner fillet matching outer shell
+    with BuildPart() as pos_outer_builder:
+        with BuildSketch(Plane.YZ):
+            offset(Polygon([p1, p2, p3, p5, p6, p7]), amount=-lip_t)
+        extrude(amount=(enc_width - 2 * lip_t) / 2, both=True)
+        r_pos = corner_r - lip_t
+        if r_pos > 0.1:
+            v_edges = pos_outer_builder.edges().filter_by(Axis.Z).filter_by_position(Axis.Y, -70, -66)
+            if v_edges:
+                fillet(v_edges, radius=r_pos)
+    outer_lip_ext = pos_outer_builder.part
     
     with BuildSketch(Plane.YZ):
         offset(Polygon([p1, p2, p3, p5, p6, p7]), amount=-wall)
@@ -221,9 +229,17 @@ with BuildPart() as pos_lip:
 lip_positive_solid = lip_positive
 
 with BuildPart() as neg_lip:
-    with BuildSketch(Plane.YZ):
-        offset(Polygon([p1, p2, p3, p5, p6, p7]), amount=-lip_t + lip_tol)
-    outer_neg_ext = extrude(amount=(enc_width - 2 * lip_t + 2 * lip_tol) / 2, both=True, mode=Mode.PRIVATE)
+    # Outer negative cutter with concentric corner fillet matching outer shell
+    with BuildPart() as neg_outer_builder:
+        with BuildSketch(Plane.YZ):
+            offset(Polygon([p1, p2, p3, p5, p6, p7]), amount=-lip_t + lip_tol)
+        extrude(amount=(enc_width - 2 * lip_t + 2 * lip_tol) / 2, both=True)
+        r_neg = corner_r - lip_t + lip_tol
+        if r_neg > 0.1:
+            v_edges_neg = neg_outer_builder.edges().filter_by(Axis.Z).filter_by_position(Axis.Y, -70, -66)
+            if v_edges_neg:
+                fillet(v_edges_neg, radius=r_neg)
+    outer_neg_ext = neg_outer_builder.part
     
     with BuildSketch(Plane.YZ):
         offset(Polygon([p1, p2, p3, p5, p6, p7]), amount=-wall - lip_tol)
@@ -466,7 +482,8 @@ if __name__ == "__main__":
     # 7. STREAM TO OCP CAD VIEWER IN VS CODE
     # ==========================================
     try:
-        from ocp_vscode import show, reset_show
+        from ocp_vscode import show, reset_show, set_port
+        set_port(3939)
         reset_show()
         # Display both halves in the viewer
         show(
