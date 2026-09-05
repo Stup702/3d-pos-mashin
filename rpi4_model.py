@@ -49,19 +49,21 @@ def get_rpi4_centered(raw_rpi: Compound = None) -> Compound:
     return Compound(transformer.Shape())
 
 
-def get_rpi4_assembly(screen_plane: Plane, orientation: str = "chin", raw_rpi: Compound = None) -> Compound:
+def get_rpi4_assembly(screen_plane: Plane, orientation: str = "peak", raw_rpi: Compound = None, use_cache: bool = True) -> Compound:
     """
     Mates the Raspberry Pi 4 onto the 4 brass standoffs on the back of the DFR0550-V2 screen.
-    
-    Args:
-        screen_plane: The reference screen plane of case_top.
-        orientation:
-            - 'chin' (Recommended): USB/Ethernet ports face the front chin (-Y).
-              MicroSD / DSI ribbon interface faces the rear peak (+Y), directly
-              adjacent to the display's FPC DISPLAY connector for a clean, short ribbon link.
-            - 'peak': USB/Ethernet ports face the rear peak (+Y).
-        raw_rpi: Optional pre-loaded raw RPi compound to save load time.
+    Uses native BREP cache when available for near-instant (<0.5s) loading.
     """
+    cache_path = os.path.join(os.path.dirname(__file__), "rpi4_placed.brep")
+    if orientation == "peak" and use_cache and os.path.exists(cache_path):
+        from OCP.BRepTools import BRepTools
+        from OCP.BRep import BRep_Builder
+        from OCP.TopoDS import TopoDS_Shape
+        builder = BRep_Builder()
+        shape = TopoDS_Shape()
+        if BRepTools.Read_s(shape, cache_path, builder):
+            return Compound(shape)
+
     centered = get_rpi4_centered(raw_rpi)
 
     # Standoff offset is -1.82mm when screen is rotated 180 (peak), and +1.82mm in chin mode

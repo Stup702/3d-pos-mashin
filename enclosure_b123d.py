@@ -452,28 +452,29 @@ case_bottom = case_bottom + bat_cradle.part
 print("Case Top Volume:", case_top.volume)
 print("Case Bottom Volume:", case_bottom.volume)
 
-# ==========================================
-# 6. EXPORT STEP & STL
-# ==========================================
-export_step(case_top, "case_top_b123d.step")
-export_step(case_bottom, "case_bottom_b123d.step")
-export_stl(case_top, "case_top_b123d.stl", tolerance=0.02, angular_tolerance=0.1)
-export_stl(case_bottom, "case_bottom_b123d.stl", tolerance=0.02, angular_tolerance=0.1)
-print("Exported case_top and case_bottom successfully to STEP and STL!")
+if __name__ == "__main__":
+    # ==========================================
+    # 6. EXPORT STEP & STL
+    # ==========================================
+    export_step(case_top, "case_top_b123d.step")
+    export_step(case_bottom, "case_bottom_b123d.step")
+    export_stl(case_top, "case_top_b123d.stl", tolerance=0.02, angular_tolerance=0.1)
+    export_stl(case_bottom, "case_bottom_b123d.stl", tolerance=0.02, angular_tolerance=0.1)
+    print("Exported case_top and case_bottom successfully to STEP and STL!")
 
-# ==========================================
-# 7. STREAM TO OCP CAD VIEWER IN VS CODE
-# ==========================================
-try:
-    from ocp_vscode import show, reset_show
-    reset_show()
-    # Display both halves in the viewer
-    show(
-        case_top.moved(Location((-75, 0, 0))),
-        case_bottom.moved(Location((75, 0, 0))),
-        names=["case_top_lid", "case_bottom_tub"],
-        colors=["#708090", "#2F4F4F"]
-    )
-    print("Sent both case halves to OCP CAD Viewer!")
-except Exception as e:
-    print("OCP Viewer notice:", e)
+    # ==========================================
+    # 7. STREAM TO OCP CAD VIEWER IN VS CODE
+    # ==========================================
+    try:
+        from ocp_vscode import show, reset_show
+        reset_show()
+        # Display both halves in the viewer
+        show(
+            case_top.moved(Location((-75, 0, 0))),
+            case_bottom.moved(Location((75, 0, 0))),
+            names=["case_top_lid", "case_bottom_tub"],
+            colors=["#708090", "#2F4F4F"]
+        )
+        print("Sent both case halves to OCP CAD Viewer!")
+    except Exception as e:
+        print("OCP Viewer notice:", e)

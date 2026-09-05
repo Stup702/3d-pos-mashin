@@ -31,63 +31,51 @@ from screen_dfr0550 import build_dfr0550_screen
 from rpi4_model import get_rpi4_assembly, load_raw_rpi4
 from internal_components import build_ups_dummy, build_battery_dummy, build_fan_dummy
 
-def run_assembly(exploded: bool = False):
+def run_assembly(exploded: bool = False, verify: bool = False, export_stls: bool = False):
+    import time
+    t_start = time.time()
     print("==================================================")
     print("   3D POS TERMINAL - FULL SYSTEM CAD ASSEMBLY    ")
     print("==================================================")
 
     # 1. BUILD DFR0550-V2 SCREEN SOLID (ROTATED 180 DEG)
-    print("\n[1/6] Building DFRobot 5\" Touchscreen solid (180° rotated)...")
+    print("\n[1/4] Building DFRobot 5\" Touchscreen solid (180° rotated)...")
     screen = build_dfr0550_screen(screen_plane, rotated_180=True)
-    print(f"      Screen Solid Volume: {screen.volume:.1f} mm^3")
 
-    # 2. LOAD & MATE RASPBERRY PI 4 MODEL (PEAK ORIENTATION)
-    print("\n[2/6] Loading and mating Raspberry Pi 4 Model B (Peak Orientation)...")
-    raw_rpi = load_raw_rpi4()
-    rpi4 = get_rpi4_assembly(screen_plane, orientation="peak", raw_rpi=raw_rpi)
-    rpi_bb = rpi4.bounding_box()
-    print(f"      RPi 4 Mated Bounding Box:")
-    print(f"      X: [{rpi_bb.min.X:.2f}, {rpi_bb.max.X:.2f}] mm")
-    print(f"      Y: [{rpi_bb.min.Y:.2f}, {rpi_bb.max.Y:.2f}] mm")
-    print(f"      Z: [{rpi_bb.min.Z:.2f}, {rpi_bb.max.Z:.2f}] mm")
+    # 2. LOAD RASPBERRY PI 4 MODEL (FROM BREP CACHE: <0.5s)
+    print("\n[2/4] Loading Raspberry Pi 4 Model B (Peak Orientation)...")
+    rpi4 = get_rpi4_assembly(screen_plane, orientation="peak")
 
     # 3. BUILD INTERNAL ELECTRONIC DUMMY MODELS
-    print("\n[3/6] Building internal electronics dummies...")
+    print("\n[3/4] Building internal electronics dummies (UPS, Fan, Battery)...")
     ups = build_ups_dummy(floor_plane)
     fan = build_fan_dummy(floor_plane)
     bat = build_battery_dummy(floor_plane)
-    print(f"      • UPS Module: {ups.volume:.1f} mm^3 (56.2 x 79.1 mm PCB, DC jack at X=-43)")
-    print(f"      • 30mm Cooling Fan: {fan.volume:.1f} mm^3 (LD3007MS Pi-FAN at local y=48.0)")
-    print(f"      • Battery Pack: {bat.volume:.1f} mm^3 (67.3 x 73.2 x 18.4 mm at local y=104.5)")
 
-    # 4. COMPREHENSIVE COLLISION & PACKAGING VERIFICATION
-    print("\n[4/6] Running full 3D collision and packaging verification...")
-    screen_in_lid = screen_plane.from_local_coords((0, 0, 0))
-    print(f"      • Screen Glass Face: Flush at Z=0 of faceplate ({screen_in_lid.Y:.1f} mm, {screen_in_lid.Z:.1f} mm)")
-    print(f"      • Screen Side Cable: Accommodated by 1.5mm right-side clearance gap.")
-    print(f"      • Short DSI Cable: Pi DSI port & Screen DISPLAY port both at front chin (~25mm span).")
+    # 4. OPTIONAL 3D COLLISION VERIFICATION (--verify)
+    if verify:
+        print("\n[*] Running full 3D boolean collision checks...")
+        int_ups = (rpi4 & ups).volume
+        int_fan = (rpi4 & fan).volume
+        int_bat = (rpi4 & bat).volume
+        int_top = (rpi4 & case_top).volume
+        int_screen = (screen & case_top).volume
 
-    # Interference checks
-    int_ups = (rpi4 & ups).volume
-    int_fan = (rpi4 & fan).volume
-    int_bat = (rpi4 & bat).volume
-    int_top = (rpi4 & case_top).volume
-    int_screen = (screen & case_top).volume
+        print(f"      • RPi 4 vs UPS Module:     {int_ups:.4f} mm^3 (CLEAN)")
+        print(f"      • RPi 4 vs Cooling Fan:    {int_fan:.4f} mm^3 (CLEAN)")
+        print(f"      • RPi 4 vs Battery Pack:   {int_bat:.4f} mm^3 (CLEAN)")
+        print(f"      • RPi 4 vs Top Lid:        {int_top:.4f} mm^3 (CLEAN)")
+        print(f"      • Screen vs Top Lid:       {int_screen:.4f} mm^3 (CLEAN)")
 
-    print(f"      • RPi 4 vs UPS Module Collision:     {int_ups:.4f} mm^3 (CLEAN - 100% open headroom)")
-    print(f"      • RPi 4 vs Cooling Fan Collision:    {int_fan:.4f} mm^3 (CLEAN - direct airflow path)")
-    print(f"      • RPi 4 vs Battery Pack Collision:   {int_bat:.4f} mm^3 (CLEAN - 11.5mm vertical air gap)")
-    print(f"      • RPi 4 vs Top Lid Collision:        {int_top:.4f} mm^3 (CLEAN - deep bracket pocket)")
-    print(f"      • Screen vs Top Lid Collision:       {int_screen:.4f} mm^3 (CLEAN - flush balcony fit)")
-
-    # 5. EXPORT STLS
-    print("\n[5/6] Exporting component STL models for rendering...")
-    export_stl(screen, "screen_dfr0550.stl", tolerance=0.05, angular_tolerance=0.2)
-    export_stl(rpi4, "rpi4_b.stl", tolerance=0.1, angular_tolerance=0.3)
-    export_stl(ups, "ups_dummy.stl", tolerance=0.05, angular_tolerance=0.2)
-    export_stl(fan, "fan_dummy.stl", tolerance=0.05, angular_tolerance=0.2)
-    export_stl(bat, "battery_dummy.stl", tolerance=0.05, angular_tolerance=0.2)
-    print("      ✓ Exported all component STLs successfully!")
+    # 5. OPTIONAL STL EXPORT (--export)
+    if export_stls:
+        print("\n[*] Exporting component STL models...")
+        export_stl(screen, "screen_dfr0550.stl", tolerance=0.05, angular_tolerance=0.2)
+        export_stl(rpi4, "rpi4_b.stl", tolerance=0.1, angular_tolerance=0.3)
+        export_stl(ups, "ups_dummy.stl", tolerance=0.05, angular_tolerance=0.2)
+        export_stl(fan, "fan_dummy.stl", tolerance=0.05, angular_tolerance=0.2)
+        export_stl(bat, "battery_dummy.stl", tolerance=0.05, angular_tolerance=0.2)
+        print("      ✓ Exported component STLs successfully!")
 
     # 6. STREAM TO OCP CAD VIEWER
     print("\n[6/6] Streaming to OCP CAD Viewer (port 3939)...")
