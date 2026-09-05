@@ -107,7 +107,7 @@ with BuildPart() as master:
 
     # D. Hollow Wedge (3.5mm Heavy Duty Walls)
     with BuildSketch(Plane.YZ):
-        offset(Polygon([p1, p2, p3, p5, p6, p7]), amount=-wall)
+        offset(Polygon([p1, p2, p3, p5, p6, p7]), amount=-wall, kind=Kind.INTERSECTION)
     inner_cavity = extrude(amount=(enc_width - 2 * wall) / 2, both=True, mode=Mode.PRIVATE)
     master.part = master.part - inner_cavity
 
@@ -337,6 +337,117 @@ with BuildPart() as bottom_screw_holes:
                 Circle(radius=6.5 / 2)
         extrude(amount=cb_depth + 1)
 case_bottom = case_bottom - bottom_screw_holes.part
+
+# ==========================================
+# 5B. CONFORMAL INTERNAL CRADLES & FAN (SLANTED FLOOR)
+# ==========================================
+# The underbelly floor slopes from p1=(-70, 0) to p7=(140, 30) at angle ~8.13 deg.
+# To prevent any floating geometry, we construct a conformal floor Plane on the inner floor face.
+floor_dy = p7[0] - p1[0]
+floor_dz = p7[1] - p1[1]
+floor_angle = math.atan2(floor_dz, floor_dy)
+floor_ny = -math.sin(floor_angle)
+floor_nz = math.cos(floor_angle)
+
+# Inner floor point at Y = 0:
+floor_z_outer_0 = (0 - p1[0]) * (floor_dz / floor_dy)
+inner_floor_origin = (0, wall * floor_ny, floor_z_outer_0 + wall * floor_nz)
+
+floor_plane = Plane(
+    origin=inner_floor_origin,
+    x_dir=(1, 0, 0),
+    z_dir=(0, floor_ny, floor_nz) # Normal points inward into the tub cavity
+)
+
+# --- 1. UPS Board Cradle (Front Chin Section) ---
+# Board size: 56.20mm (along Y/wall) x 79.08mm (along X)
+# Height = 1.6mm (strictly PCB thickness per instructions)
+ups_w = 79.08
+ups_l = 56.20
+ups_tol = 0.6
+ups_wall = 1.5
+ups_h = 1.6
+
+# Hugs the left wall (inner wall at X = -46.5)
+ups_cx = -5.16
+ups_cy_local = -16.0
+
+with BuildPart() as ups_cradle:
+    with BuildSketch(floor_plane):
+        with Locations((ups_cx, ups_cy_local)):
+            Rectangle(ups_w + ups_tol + 2 * ups_wall, ups_l + ups_tol + 2 * ups_wall)
+            Rectangle(ups_w + ups_tol, ups_l + ups_tol, mode=Mode.SUBTRACT)
+    extrude(amount=ups_h)
+case_bottom = case_bottom + ups_cradle.part
+
+# DC Barrel Jack Port Cutout on Left Wall (X = -50)
+# Aligned with the bottom barrel jack on the short edge of the UPS
+jack_local_y = ups_cy_local - (ups_l / 2) + 14.0
+jack_world_pt = floor_plane.from_local_coords((ups_cx, jack_local_y, 6.0))
+
+with BuildPart() as dc_jack_port:
+    with BuildSketch(Plane.YZ.offset(-55)):
+        with Locations((jack_world_pt.Y, jack_world_pt.Z)):
+            Circle(radius=11.0 / 2) # 11mm clearance hole for DC barrel plug
+    extrude(amount=15.0)
+case_bottom = case_bottom - dc_jack_port.part
+
+# --- 2. Cooling Fan Slot & Vents (Middle Section: LD3007MS 30mm Pi-FAN) ---
+# Spec: LD3007MS, 30mm square x 7mm, 24mm x 24mm mounting hole spacing
+# Centered at local y = 38.0 directly under the Raspberry Pi 4 CPU!
+# Leaves 9.1mm open clearance in front for the UPS USB-C cable, and 11.2mm behind to the battery cradle!
+fan_size = 30.0
+fan_hole_spacing = 24.0
+fan_cx = 0.0
+fan_cy_local = 38.0
+
+with BuildPart() as fan_mount:
+    # 4 Corner Standoffs (2.0mm tall) on the inner floor
+    with BuildSketch(floor_plane):
+        for fx in [-fan_hole_spacing / 2, fan_hole_spacing / 2]:
+            for fy in [-fan_hole_spacing / 2, fan_hole_spacing / 2]:
+                with Locations((fan_cx + fx, fan_cy_local + fy)):
+                    Circle(radius=5.5 / 2)
+    extrude(amount=2.0)
+case_bottom = case_bottom + fan_mount.part
+
+# Fan Air Intake Vent & Screw Clearance Holes through the Slanted Bottom Floor
+with BuildPart() as fan_vents:
+    with BuildSketch(floor_plane):
+        for fx in [-fan_hole_spacing / 2, fan_hole_spacing / 2]:
+            for fy in [-fan_hole_spacing / 2, fan_hole_spacing / 2]:
+                with Locations((fan_cx + fx, fan_cy_local + fy)):
+                    Circle(radius=3.2 / 2)
+        with Locations((fan_cx, fan_cy_local)):
+            for i in range(-2, 3):
+                with Locations((0, i * 4.0)):
+                    slot_w = math.sqrt(max(0, 12.0**2 - (i * 4.0)**2)) * 2 - 2
+                    if slot_w > 3:
+                        Rectangle(slot_w, 2.2)
+    # Extrude outwards in negative local Z to cut through the 3.5mm bottom wall
+    extrude(amount=-10.0)
+case_bottom = case_bottom - fan_vents.part
+
+# --- 3. Battery Pack Cradle (Rear Section, Pushed Back on Sharp Floor) ---
+# Pack size: 67.25mm (along X) x 73.15mm (along Y) x 18.38mm
+# Sits cleanly between the rear boss pillars (72.0mm gap vs 70.85mm cradle outer width = 0.58mm clearance on each side!)
+# Pushed back to bat_cy_local = 99.6: front wall is 11.2mm away from fan rear holes (ZERO interference!),
+# and rear wall ends at local y = 138.0, squarely on the sharp inner floor before the drop.
+bat_w = 67.25
+bat_l = 73.15
+bat_tol = 0.6
+bat_wall = 1.5
+bat_h = 5.0 # 5.0mm retention perimeter wall
+bat_cx = 0.0
+bat_cy_local = 99.6
+
+with BuildPart() as bat_cradle:
+    with BuildSketch(floor_plane):
+        with Locations((bat_cx, bat_cy_local)):
+            Rectangle(bat_w + bat_tol + 2 * bat_wall, bat_l + bat_tol + 2 * bat_wall)
+            Rectangle(bat_w + bat_tol, bat_l + bat_tol, mode=Mode.SUBTRACT)
+    extrude(amount=bat_h)
+case_bottom = case_bottom + bat_cradle.part
 
 print("Case Top Volume:", case_top.volume)
 print("Case Bottom Volume:", case_bottom.volume)
