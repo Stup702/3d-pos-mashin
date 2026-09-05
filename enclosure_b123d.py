@@ -124,7 +124,7 @@ with BuildPart() as master:
     # F. Screen Mounting Frame & Pocket (on the Screen Plane)
     with BuildSketch(screen_plane.offset(-screen_t / 2)):
         Rectangle(screen_w + 12, screen_l + 12)
-        with Locations((-screen_ribbon_gap / 2, 0)):
+        with Locations((screen_ribbon_gap / 2, 0)):
             Rectangle(screen_w + screen_ribbon_gap + 0.4, screen_l + 0.4, mode=Mode.SUBTRACT)
     extrude(amount=screen_t / 2, both=True, mode=Mode.ADD)
 
@@ -144,7 +144,7 @@ with BuildPart() as master:
 
     # Faceplate Viewing Cutout (punches through outer skin)
     with BuildSketch(screen_plane.offset(3)):
-        with Locations((-screen_ribbon_gap / 2, 0)):
+        with Locations((screen_ribbon_gap / 2, 0)):
             Rectangle(screen_w + screen_ribbon_gap, screen_l)
     extrude(amount=7, both=True, mode=Mode.SUBTRACT)
 
@@ -394,12 +394,12 @@ case_bottom = case_bottom - dc_jack_port.part
 
 # --- 2. Cooling Fan Slot & Vents (Middle Section: LD3007MS 30mm Pi-FAN) ---
 # Spec: LD3007MS, 30mm square x 7mm, 24mm x 24mm mounting hole spacing
-# Centered at local y = 38.0 directly under the Raspberry Pi 4 CPU!
-# Leaves 9.1mm open clearance in front for the UPS USB-C cable, and 11.2mm behind to the battery cradle!
+# Shifted back to local y = 48.0: opens 19.1mm front corridor for UPS USB-C cord,
+# and aligns intake airflow right in front of the Raspberry Pi 4 CPU!
 fan_size = 30.0
 fan_hole_spacing = 24.0
 fan_cx = 0.0
-fan_cy_local = 38.0
+fan_cy_local = 48.0
 
 with BuildPart() as fan_mount:
     # 4 Corner Standoffs (2.0mm tall) on the inner floor
@@ -428,18 +428,18 @@ with BuildPart() as fan_vents:
     extrude(amount=-10.0)
 case_bottom = case_bottom - fan_vents.part
 
-# --- 3. Battery Pack Cradle (Rear Section, Pushed Back on Sharp Floor) ---
+# --- 3. Battery Pack Cradle (Rear Section, Pushed Back to Floor Drop) ---
 # Pack size: 67.25mm (along X) x 73.15mm (along Y) x 18.38mm
 # Sits cleanly between the rear boss pillars (72.0mm gap vs 70.85mm cradle outer width = 0.58mm clearance on each side!)
-# Pushed back to bat_cy_local = 99.6: front wall is 11.2mm away from fan rear holes (ZERO interference!),
-# and rear wall ends at local y = 138.0, squarely on the sharp inner floor before the drop.
+# Pushed back to bat_cy_local = 104.5: takes full advantage of the straightened inner floor drop (Y = 143.6mm),
+# ending at local y = 142.9mm with 0.7mm safety margin before the drop.
 bat_w = 67.25
 bat_l = 73.15
 bat_tol = 0.6
 bat_wall = 1.5
 bat_h = 5.0 # 5.0mm retention perimeter wall
 bat_cx = 0.0
-bat_cy_local = 99.6
+bat_cy_local = 104.5
 
 with BuildPart() as bat_cradle:
     with BuildSketch(floor_plane):

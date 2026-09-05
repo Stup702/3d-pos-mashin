@@ -64,8 +64,9 @@ def get_rpi4_assembly(screen_plane: Plane, orientation: str = "chin", raw_rpi: C
     """
     centered = get_rpi4_centered(raw_rpi)
 
-    # Origin at the tips of the screen's 4 brass standoffs (Z = -12.4 mm, Y offset = +1.82 mm)
-    standoff_origin = screen_plane.from_local_coords((0, 1.82, -12.4))
+    # Standoff offset is -1.82mm when screen is rotated 180 (peak), and +1.82mm in chin mode
+    standoff_y_offset = -1.82 if orientation == "peak" else 1.82
+    standoff_origin = screen_plane.from_local_coords((0, standoff_y_offset, -12.4))
     ydir = screen_plane.y_dir
     xdir = screen_plane.x_dir
 

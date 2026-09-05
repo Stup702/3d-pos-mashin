@@ -34,14 +34,21 @@ RPI_HOLE_Y = 58.0             # RPi standoff spacing along length
 RPI_STANDOFF_OFFSET_Y = 1.82  # Longitudinal offset from screen center per DXF blueprint
 
 
-def build_dfr0550_screen(plane: Plane) -> Compound:
+def build_dfr0550_screen(plane: Plane, rotated_180: bool = True) -> Compound:
     """
     Constructs a complete solid compound of the DFR0550-V2 screen assembly
     anchored to the specified plane.
     
     The front face of the cover glass is positioned flush at plane local Z = 0.
     The assembly extends in negative local Z (inward into the casing).
+    
+    When rotated_180=True:
+    - The FPC DISPLAY connector is at the front chin (-Y).
+    - The glass ribbon fold is on the right (+X).
+    - RPi standoff offset is at -1.82mm along length.
     """
+    y_offset = -RPI_STANDOFF_OFFSET_Y if rotated_180 else RPI_STANDOFF_OFFSET_Y
+
     with BuildPart() as builder:
         # 1. Front Cover Glass (Dark tinted glass, flush at local Z = 0)
         with BuildSketch(plane.offset(-GLASS_T / 2)):
@@ -69,7 +76,7 @@ def build_dfr0550_screen(plane: Plane) -> Compound:
         for sx in [-RPI_HOLE_X / 2, RPI_HOLE_X / 2]:
             for sy in [-RPI_HOLE_Y / 2, RPI_HOLE_Y / 2]:
                 with BuildSketch(plane.offset(standoff_base_z - STANDOFF_H / 2)):
-                    with Locations((sx, sy + RPI_STANDOFF_OFFSET_Y)):
+                    with Locations((sx, sy + y_offset)):
                         Circle(radius=STANDOFF_D / 2)
                         Circle(radius=SCREW_HOLE_D / 2, mode=Mode.SUBTRACT)
                 extrude(amount=STANDOFF_H / 2, both=True)
@@ -77,13 +84,14 @@ def build_dfr0550_screen(plane: Plane) -> Compound:
     return builder.part
 
 
-def get_rpi_standoff_mating_plane(screen_plane: Plane) -> Plane:
+def get_rpi_standoff_mating_plane(screen_plane: Plane, rotated_180: bool = True) -> Plane:
     """
     Returns the exact target Plane where the Raspberry Pi PCB bottom face mates
     against the tips of the 4 screen brass standoffs.
     """
     standoff_tip_z = -(GLASS_T + LCD_MODULE_T + PCB_T + STANDOFF_H) # -12.4 mm
-    mating_origin = screen_plane.from_local_coords((0, RPI_STANDOFF_OFFSET_Y, standoff_tip_z))
+    y_offset = -RPI_STANDOFF_OFFSET_Y if rotated_180 else RPI_STANDOFF_OFFSET_Y
+    mating_origin = screen_plane.from_local_coords((0, y_offset, standoff_tip_z))
     
     return Plane(
         origin=mating_origin,
