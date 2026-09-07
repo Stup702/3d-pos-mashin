@@ -1,0 +1,6 @@
+__pycache__/
+*.pyc
+*.brep
+extra_cad_files/
+.vscode/
+power_button.py

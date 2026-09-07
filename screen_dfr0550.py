@@ -81,6 +81,13 @@ def build_dfr0550_screen(plane: Plane, rotated_180: bool = True) -> Compound:
                         Circle(radius=SCREW_HOLE_D / 2, mode=Mode.SUBTRACT)
                 extrude(amount=STANDOFF_H / 2, both=True)
 
+        # 5. 15-Pin Raspberry Pi DSI FPC Connector (Official STEP coordinates)
+        dsi_y = -47.72 if rotated_180 else 47.72
+        with BuildSketch(plane.offset(standoff_base_z - 3.1 / 2)):
+            with Locations((0.0, dsi_y)):
+                Rectangle(19.0, 4.9)
+        extrude(amount=3.1 / 2, both=True)
+
     return builder.part
 
 

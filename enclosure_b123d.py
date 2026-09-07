@@ -166,6 +166,15 @@ with BuildPart() as master:
                     Circle(radius=screen_screw_clear_d / 2)
             extrude(amount=20, both=True, mode=Mode.SUBTRACT)
 
+    # DSI Ribbon Cable Pass-Through Notch on Front Chin Balcony (-Y)
+    # Allows 15-pin FPC cable from screen DSI connector to pass through balcony
+    dsi_notch_w = 22.0
+    dsi_notch_l = 16.0
+    with BuildSketch(screen_plane.offset(-screen_t - balcony_t / 2)):
+        with Locations((0.0, -56.0)):
+            Rectangle(dsi_notch_w, dsi_notch_l)
+    extrude(amount=(balcony_t + 2) / 2, both=True, mode=Mode.SUBTRACT)
+
 master_shell_part = master.part
 
 # ==========================================
@@ -377,29 +386,57 @@ floor_plane = Plane(
 
 # --- 1. UPS Board Cradle (Front Chin Section) ---
 # Board size: 56.20mm (along Y/wall) x 79.08mm (along X)
-# Height = 1.6mm (strictly PCB thickness per instructions)
-ups_w = 79.08
-ups_l = 56.20
+# Height: 3.5mm standoff pedestal + 1.6mm PCB friction lip = 5.1mm total wall height
+ups_w = 79.15
+ups_l = 54.50
 ups_tol = 0.6
 ups_wall = 1.5
-ups_h = 1.6
+ups_pedestal_h = 3.5
+ups_pcb_t = 1.6
+ups_total_h = ups_pedestal_h + ups_pcb_t # 5.1mm
 
-# Hugs the left wall (inner wall at X = -46.5)
-ups_cx = -5.16
+# Hugs the left wall (inner wall at X = -46.0)
+ups_cx = -4.125
 ups_cy_local = -16.0
 
+# 4mm screw hole boss: 39.7mm from left wall, 18.9mm from fan-side (top/rear) edge
+ups_left_edge_x = ups_cx - ups_w / 2.0  # -43.70 mm
+ups_boss_x = ups_left_edge_x + 39.70    # -4.00 mm
+ups_rear_edge_y = ups_cy_local + ups_l / 2.0 # +11.25 mm
+ups_boss_y = ups_rear_edge_y - 18.90    # -7.65 mm
+ups_boss_outer_d = 8.0
+ups_boss_hole_d = 4.0
+
 with BuildPart() as ups_cradle:
+    # A. Center Screw Standoff Boss (3.5mm tall, 4.0mm hole)
+    with BuildSketch(floor_plane):
+        with Locations((ups_boss_x, ups_boss_y)):
+            Circle(radius=ups_boss_outer_d / 2)
+            Circle(radius=ups_boss_hole_d / 2, mode=Mode.SUBTRACT)
+    extrude(amount=ups_pedestal_h)
+
+    # B. Friction Fit Perimeter Wall (5.1mm tall)
     with BuildSketch(floor_plane):
         with Locations((ups_cx, ups_cy_local)):
             Rectangle(ups_w + ups_tol + 2 * ups_wall, ups_l + ups_tol + 2 * ups_wall)
             Rectangle(ups_w + ups_tol, ups_l + ups_tol, mode=Mode.SUBTRACT)
-    extrude(amount=ups_h)
+    extrude(amount=ups_total_h)
+
+    # C. 4 Corner Support Pads (3.5mm tall) to keep PCB perfectly level
+    pad_size = 5.0
+    with BuildSketch(floor_plane):
+        for px in [-(ups_w + ups_tol) / 2 + pad_size / 2, (ups_w + ups_tol) / 2 - pad_size / 2]:
+            for py in [-(ups_l + ups_tol) / 2 + pad_size / 2, (ups_l + ups_tol) / 2 - pad_size / 2]:
+                with Locations((ups_cx + px, ups_cy_local + py)):
+                    Rectangle(pad_size, pad_size)
+    extrude(amount=ups_pedestal_h)
+
 case_bottom = case_bottom + ups_cradle.part
 
 # DC Barrel Jack Port Cutout on Left Wall (X = -50)
-# Aligned with the bottom barrel jack on the short edge of the UPS
+# Aligned with the bottom barrel jack on the short edge of the elevated UPS (Z = 9.0mm)
 jack_local_y = ups_cy_local - (ups_l / 2) + 14.0
-jack_world_pt = floor_plane.from_local_coords((ups_cx, jack_local_y, 6.0))
+jack_world_pt = floor_plane.from_local_coords((ups_cx, jack_local_y, 9.0))
 
 with BuildPart() as dc_jack_port:
     with BuildSketch(Plane.YZ.offset(-55)):
@@ -449,11 +486,11 @@ case_bottom = case_bottom - fan_vents.part
 # Sits cleanly between the rear boss pillars (72.0mm gap vs 70.85mm cradle outer width = 0.58mm clearance on each side!)
 # Pushed back to bat_cy_local = 104.5: takes full advantage of the straightened inner floor drop (Y = 143.6mm),
 # ending at local y = 142.9mm with 0.7mm safety margin before the drop.
-bat_w = 67.25
-bat_l = 73.15
+bat_w = 67.80
+bat_l = 73.35
 bat_tol = 0.6
 bat_wall = 1.5
-bat_h = 5.0 # 5.0mm retention perimeter wall
+bat_h = 10.0 # 10.0mm heavy-duty retention perimeter wall
 bat_cx = 0.0
 bat_cy_local = 104.5
 

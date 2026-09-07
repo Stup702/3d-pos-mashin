@@ -13,15 +13,15 @@ from build123d import *
 import math
 
 # Dimensions
-UPS_W = 79.08          # Along X
-UPS_L = 56.20          # Along Y
+UPS_W = 79.15          # Along X
+UPS_L = 54.50          # Along Y
 UPS_PCB_T = 1.6        # PCB thickness
-UPS_CX = -5.16         # Hugged to left inner wall
+UPS_CX = -4.125        # Hugged to left inner wall
 UPS_CY_LOCAL = -16.0   # Cradle center
 
-BAT_W = 67.25          # Along X
-BAT_L = 73.15          # Along Y
-BAT_H = 18.38          # Pack thickness (Z)
+BAT_W = 67.80          # Along X
+BAT_L = 73.35          # Along Y
+BAT_H = 17.00          # Pack thickness (Z)
 BAT_CX = 0.0
 BAT_CY_LOCAL = 104.5   # Pushed back to floor drop
 
@@ -33,19 +33,31 @@ FAN_CX = 0.0
 FAN_CY_LOCAL = 48.0
 
 
+UPS_PEDESTAL_H = 3.5   # 3.5mm standoff elevation
+
 def build_ups_dummy(floor_plane: Plane) -> Compound:
     """Constructs a detailed solid dummy of the UPS board with connectors."""
+    left_edge_x = UPS_CX - UPS_W / 2.0
+    boss_x = left_edge_x + 39.70
+    rear_edge_y = UPS_CY_LOCAL + UPS_L / 2.0
+    boss_y = rear_edge_y - 18.90
+
+    base_z = UPS_PEDESTAL_H
+
     with BuildPart() as builder:
-        # A. Main PCB
-        with BuildSketch(floor_plane.offset(UPS_PCB_T / 2)):
+        # A. Main PCB (elevated 3.5mm above floor)
+        with BuildSketch(floor_plane.offset(base_z + UPS_PCB_T / 2)):
             with Locations((UPS_CX, UPS_CY_LOCAL)):
                 Rectangle(UPS_W, UPS_L)
+            # 4mm screw hole
+            with Locations((boss_x, boss_y)):
+                Circle(radius=4.0 / 2, mode=Mode.SUBTRACT)
         extrude(amount=UPS_PCB_T / 2, both=True)
 
         # B. DC Barrel Jack (Short edge facing left wall X = -50)
         jack_local_y = UPS_CY_LOCAL - (UPS_L / 2) + 14.0
         jack_cx = UPS_CX - (UPS_W / 2) + 7.0
-        with BuildSketch(floor_plane.offset(UPS_PCB_T + 5.5)):
+        with BuildSketch(floor_plane.offset(base_z + UPS_PCB_T + 5.5)):
             with Locations((jack_cx, jack_local_y)):
                 Rectangle(14.0, 9.0)
         extrude(amount=5.5, both=True)
@@ -53,7 +65,7 @@ def build_ups_dummy(floor_plane: Plane) -> Compound:
         # C. Dual USB-A Jack on Rear Edge (facing fan corridor)
         usb_a_cx = UPS_CX + 15.0
         usb_a_cy = UPS_CY_LOCAL + (UPS_L / 2) - 8.0
-        with BuildSketch(floor_plane.offset(UPS_PCB_T + 7.5)):
+        with BuildSketch(floor_plane.offset(base_z + UPS_PCB_T + 7.5)):
             with Locations((usb_a_cx, usb_a_cy)):
                 Rectangle(14.5, 16.0)
         extrude(amount=7.5, both=True)
@@ -61,13 +73,13 @@ def build_ups_dummy(floor_plane: Plane) -> Compound:
         # D. Internal USB-C Port on Rear Edge
         usb_c_cx = UPS_CX - 15.0
         usb_c_cy = UPS_CY_LOCAL + (UPS_L / 2) - 4.0
-        with BuildSketch(floor_plane.offset(UPS_PCB_T + 1.6)):
+        with BuildSketch(floor_plane.offset(base_z + UPS_PCB_T + 1.6)):
             with Locations((usb_c_cx, usb_c_cy)):
                 Rectangle(9.0, 8.0)
         extrude(amount=1.6, both=True)
 
         # E. Battery Holder / High-profile ICs
-        with BuildSketch(floor_plane.offset(UPS_PCB_T + 4.0)):
+        with BuildSketch(floor_plane.offset(base_z + UPS_PCB_T + 4.0)):
             with Locations((UPS_CX - 5.0, UPS_CY_LOCAL - 8.0)):
                 Rectangle(35.0, 25.0)
         extrude(amount=4.0, both=True)

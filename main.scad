@@ -8,7 +8,8 @@ render_part = 0;
 // --- PARAMETERS ---
 // Enclosure Dimensions
 enc_width = 100; 
-wall = 3;
+wall = 4.5;                   // 4.5mm wall thickness (provides 1.5mm lip + 3.0mm solid backing shoulder)
+corner_r = 4.0;               // 4.0mm smooth radius for the 4 vertical outer corner columns (0 overhang in Z)
 
 // Screen Dimensions
 screen_w = 75.8;
@@ -128,21 +129,48 @@ module pn532_slider() {
     }
 }
 
-// --- MODULES: SHELL & LAP JOINTS ---
-module outer_solid() {
-    rotate([90, 0, 90]) 
-    linear_extrude(height=enc_width, center=true)
+// --- MODULES: 2D PROFILES & CSG VOLUME ---
+module side_poly(delta=0) {
+    offset(delta=delta)
     polygon([p1_front_bot, p2_front_top, p3_peak, p5_foot_back, p6_foot_front, p7_neck]);
+}
+
+module footprint_xy_2d(delta=0) {
+    offset(delta=delta) {
+        hull() {
+            translate([-enc_width/2 + corner_r, p1_front_bot[0] + corner_r]) circle(r=corner_r, $fn=40);
+            translate([ enc_width/2 - corner_r, p1_front_bot[0] + corner_r]) circle(r=corner_r, $fn=40);
+            translate([-enc_width/2 + corner_r, p5_foot_back[0] - corner_r]) circle(r=corner_r, $fn=40);
+            translate([ enc_width/2 - corner_r, p5_foot_back[0] - corner_r]) circle(r=corner_r, $fn=40);
+        }
+    }
+}
+
+// Reusable orthogonal CSG volume generator (guarantees 100% concentric walls and 0 feather edges)
+module csg_volume(delta=0) {
+    intersection() {
+        rotate([90, 0, 90])
+        linear_extrude(height=enc_width + 100, center=true)
+        side_poly(delta);
+
+        translate([0, 0, 50])
+        linear_extrude(height=300, center=true)
+        footprint_xy_2d(delta);
+    }
+}
+
+module outer_solid() {
+    csg_volume(0);
 }
 
 // --- MODULES: SHELL & LAP JOINTS ---
 module master_shell() {
     difference() {
         union() {
-            // Hollow Wedge
+            // Hollow Wedge (with uniform 4.5mm heavy-duty walls)
             difference() {
                 outer_solid();
-                translate([0, 0, -1]) rotate([90, 0, 90]) linear_extrude(height=enc_width - (wall * 2), center=true) offset(delta=-wall) polygon([p1_front_bot, p2_front_top, p3_peak, p5_foot_back, p6_foot_front, p7_neck]);
+                translate([0, 0, -0.1]) csg_volume(-wall);
                 translate([0, 80, -50]) cube([enc_width + 10, 300, 100], center=true);
             }
             
@@ -252,8 +280,8 @@ module lip_safe_positive() {
     difference() {
         intersection() {
             difference() {
-                rotate([90, 0, 90]) linear_extrude(height=enc_width - lip_t*2, center=true) offset(delta=-lip_t) polygon([p1_front_bot, p2_front_top, p3_peak, p5_foot_back, p6_foot_front, p7_neck]);
-                rotate([90, 0, 90]) linear_extrude(height=enc_width - wall*2 - 2, center=true) offset(delta=-wall) polygon([p1_front_bot, p2_front_top, p3_peak, p5_foot_back, p6_foot_front, p7_neck]);
+                csg_volume(-lip_t);
+                csg_volume(-wall);
             }
             translate([0, 0, lip_h]) bottom_mask();
         }
@@ -272,8 +300,8 @@ module lip_safe_negative() {
     difference() {
         intersection() {
             difference() {
-                rotate([90, 0, 90]) linear_extrude(height=enc_width - lip_t*2 + lip_tol*2, center=true) offset(delta=-lip_t + lip_tol) polygon([p1_front_bot, p2_front_top, p3_peak, p5_foot_back, p6_foot_front, p7_neck]);
-                rotate([90, 0, 90]) linear_extrude(height=enc_width - wall*2 - 2, center=true) offset(delta=-wall - lip_tol) polygon([p1_front_bot, p2_front_top, p3_peak, p5_foot_back, p6_foot_front, p7_neck]);
+                csg_volume(-lip_t + lip_tol);
+                csg_volume(-wall - lip_tol);
             }
             translate([0, 0, lip_h + 0.3]) bottom_mask();
         }
