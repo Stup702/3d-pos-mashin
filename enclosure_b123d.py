@@ -406,7 +406,7 @@ ups_rear_edge_y = ups_cy_local + ups_l / 2.0 # +11.75 mm
 ups_boss_y = ups_rear_edge_y - 18.90    # -7.15 mm
 ups_boss_outer_d = 8.0
 ups_pin_d = 3.70 # Snug locating pole fitting inside the 4.0mm PCB hole
-ups_pin_h = 1.50 # 1.5mm pole height (fits inside 1.6mm PCB thickness, no protrusion)
+ups_pin_h = 4.00 # 4.0mm pole height (protrudes 2.4mm above 1.6mm PCB for hot glue gun adhesion)
 
 with BuildPart() as ups_cradle:
     # A. Center Locating Pedestal & Pole (3.5mm shoulder + 1.5mm pole into PCB 4mm hole)

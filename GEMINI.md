@@ -35,7 +35,7 @@ The side profile is a wedge defined by the polygon:
    * RPi 4 Model B mounted on the screen back in "peak" orientation (GPIO header on right $+X$ side, USB/LAN facing rear $+Y$).
 2. **UPS Module**:
    * $78.30\text{ mm} \times 55.50\text{ mm}$, centered at $(X = -5.05, Y = -16.00)$ on the slanted floor.
-   * Toolless Locating Pole: $3.5\text{ mm}$ shoulder ($\varnothing 8.0\text{ mm}$) with a $1.5\text{ mm}$ locating pole ($\varnothing 3.70\text{ mm}$) fitting into the PCB's $4.0\text{ mm}$ hole. No screws needed near delicate chips!
+   * Toolless Locating Pole: $3.5\text{ mm}$ shoulder ($\varnothing 8.0\text{ mm}$) with a $4.0\text{ mm}$ tall locating pole ($\varnothing 3.70\text{ mm}$) fitting into the PCB's $4.0\text{ mm}$ hole and protruding $2.4\text{ mm}$ above the board for hot glue gun adhesion. No screws needed near delicate chips!
    * DC barrel jack: Left wall port hole ($11\text{ mm}$ split across parting line) at $Y = -10.75\text{ mm}$.
    * Cable pass-through notch: On fan-side rear wall at $X = +16.0\text{ mm}$, width $12.0\text{ mm}$, cut flush to the inner floor for female Dupont jumper wires.
 3. **Cooling Fan (LD3007MS 30mm Pi-FAN)**:
