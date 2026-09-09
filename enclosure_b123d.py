@@ -354,9 +354,9 @@ with BuildPart() as bottom_screw_holes:
         extrude(amount=z_cut + 5)
         
         # Recessed counterbore from the desk base (Z = 0)
-        # Front: 3.5mm deep (flange = 6.5mm, uses M3x12mm screw)
-        # Back: 48.0mm deep (flange = 14.4mm, uses M3x18mm or M3x20mm screw)
-        cb_depth = 48.0 if by > 50 else 3.5
+        # Front: 3.5mm deep (flange = 11.7mm, M3x16 reaches 4.3mm into insert)
+        # Back: 50.5mm deep (flange = 11.9mm, M3x16 reaches 4.1mm into insert)
+        cb_depth = 50.5 if by > 50 else 3.5
         with BuildSketch(Plane.XY.offset(-1)):
             with Locations((bx, by)):
                 Circle(radius=6.5 / 2)
@@ -405,15 +405,21 @@ ups_boss_x = ups_left_edge_x + 39.70    # -4.50 mm
 ups_rear_edge_y = ups_cy_local + ups_l / 2.0 # +11.75 mm
 ups_boss_y = ups_rear_edge_y - 18.90    # -7.15 mm
 ups_boss_outer_d = 8.0
-ups_boss_hole_d = 4.0
+ups_pin_d = 3.70 # Snug locating pole fitting inside the 4.0mm PCB hole
+ups_pin_h = 1.50 # 1.5mm pole height (fits inside 1.6mm PCB thickness, no protrusion)
 
 with BuildPart() as ups_cradle:
-    # A. Center Screw Standoff Boss (3.5mm tall, 4.0mm hole)
+    # A. Center Locating Pedestal & Pole (3.5mm shoulder + 1.5mm pole into PCB 4mm hole)
+    # Completely eliminates screws and screwdrivers near delicate chips!
     with BuildSketch(floor_plane):
         with Locations((ups_boss_x, ups_boss_y)):
             Circle(radius=ups_boss_outer_d / 2)
-            Circle(radius=ups_boss_hole_d / 2, mode=Mode.SUBTRACT)
     extrude(amount=ups_pedestal_h)
+
+    with BuildSketch(floor_plane.offset(ups_pedestal_h)):
+        with Locations((ups_boss_x, ups_boss_y)):
+            Circle(radius=ups_pin_d / 2)
+    extrude(amount=ups_pin_h)
 
     # B. Friction Fit Perimeter Wall (5.1mm tall)
     with BuildSketch(floor_plane):
