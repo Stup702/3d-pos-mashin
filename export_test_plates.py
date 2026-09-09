@@ -17,7 +17,8 @@ from enclosure_b123d import (
     case_top, case_bottom,
     screen_plane, floor_plane,
     ups_cx, ups_cy_local, ups_w, ups_l,
-    bat_cx, bat_cy_local, bat_w, bat_l
+    bat_cx, bat_cy_local, bat_w, bat_l,
+    fan_cx, fan_cy_local, fan_size
 )
 
 OUTPUT_DIR = os.path.dirname(__file__)
@@ -74,17 +75,39 @@ def make_battery_test_plate() -> Compound:
     bb = bat_plate.bounding_box()
     return bat_plate.moved(Location((-bb.center().X, -bb.center().Y, -bb.min.Z)))
 
+def make_fan_test_plate() -> Compound:
+    """Direct slice of case_bottom around the cooling fan mount and air vents."""
+    loc_floor = floor_plane.location
+    with BuildPart() as fan_cutter:
+        with BuildSketch(floor_plane.offset(-4.0)):
+            with Locations((fan_cx, fan_cy_local)):
+                Rectangle(fan_size + 14.0, fan_size + 14.0)
+        extrude(amount=25.0)
+
+    fan_cutout = (case_bottom & fan_cutter.part).moved(loc_floor.inverse())
+    with BuildPart() as floor_trim:
+        with BuildSketch(Plane.XY.offset(-4.0)):
+            with Locations((fan_cx, fan_cy_local)):
+                Rectangle(fan_size + 20.0, fan_size + 20.0)
+        extrude(amount=50.0)
+    fan_plate = (fan_cutout & floor_trim.part)
+    bb = fan_plate.bounding_box()
+    return fan_plate.moved(Location((-bb.center().X, -bb.center().Y, -bb.min.Z)))
+
 if __name__ == "__main__":
     print("Generating rapid test-print gauge plates (Direct Enclosure Slice)...")
     scr_plate = make_screen_test_plate()
     ups_plate = make_ups_test_plate()
     bat_plate = make_battery_test_plate()
+    fan_plate = make_fan_test_plate()
 
     export_stl(scr_plate, os.path.join(OUTPUT_DIR, "test_plate_screen.stl"), tolerance=0.05, angular_tolerance=0.2)
     export_stl(ups_plate, os.path.join(OUTPUT_DIR, "test_plate_ups.stl"), tolerance=0.05, angular_tolerance=0.2)
     export_stl(bat_plate, os.path.join(OUTPUT_DIR, "test_plate_battery.stl"), tolerance=0.05, angular_tolerance=0.2)
+    export_stl(fan_plate, os.path.join(OUTPUT_DIR, "test_plate_fan.stl"), tolerance=0.05, angular_tolerance=0.2)
 
     print("✓ Successfully exported direct-cut test plates:")
     print("  1. test_plate_screen.stl")
     print("  2. test_plate_ups.stl")
     print("  3. test_plate_battery.stl")
+    print("  4. test_plate_fan.stl")

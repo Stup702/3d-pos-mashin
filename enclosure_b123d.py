@@ -481,18 +481,22 @@ case_bottom = case_bottom + fan_mount.part
 
 # Fan Air Intake Vent & Screw Clearance Holes through the Slanted Bottom Floor
 with BuildPart() as fan_vents:
+    # 1. 4 Corner Screw Through-Holes (cut through both the 3.5mm floor AND the 2.0mm standoffs!)
     with BuildSketch(floor_plane):
         for fx in [-fan_hole_spacing / 2, fan_hole_spacing / 2]:
             for fy in [-fan_hole_spacing / 2, fan_hole_spacing / 2]:
                 with Locations((fan_cx + fx, fan_cy_local + fy)):
                     Circle(radius=3.2 / 2)
+    extrude(amount=10.0, both=True)
+
+    # 2. Air Intake Vent Slots (cut through the 3.5mm floor outwards)
+    with BuildSketch(floor_plane):
         with Locations((fan_cx, fan_cy_local)):
             for i in range(-2, 3):
                 with Locations((0, i * 4.0)):
                     slot_w = math.sqrt(max(0, 12.0**2 - (i * 4.0)**2)) * 2 - 2
                     if slot_w > 3:
                         Rectangle(slot_w, 2.2)
-    # Extrude outwards in negative local Z to cut through the 3.5mm bottom wall
     extrude(amount=-10.0)
 case_bottom = case_bottom - fan_vents.part
 
