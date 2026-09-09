@@ -422,7 +422,18 @@ with BuildPart() as ups_cradle:
             Rectangle(ups_w + ups_tol, ups_l + ups_tol, mode=Mode.SUBTRACT)
     extrude(amount=ups_total_h)
 
-    # C. 4 Corner Support Pads (3.5mm tall) to keep PCB perfectly level
+    # C. Cable Pass-Through Notch on Fan-Side Rear Wall (+Y)
+    # Allows jumper wires (female Dupont connectors) to pass through to fan corridor & RPi GPIO
+    # Centered at X = +16.0mm (75.8% across wall, matching user sketch)
+    ups_notch_w = 24.0
+    ups_notch_cx = 16.0
+    ups_rear_wall_cy = ups_cy_local + (ups_l + ups_tol + ups_wall) / 2.0
+    with BuildSketch(floor_plane):
+        with Locations((ups_notch_cx, ups_rear_wall_cy)):
+            Rectangle(ups_notch_w, ups_wall * 4.0)
+    extrude(amount=ups_total_h + 2.0, mode=Mode.SUBTRACT)
+
+    # D. 4 Corner Support Pads (3.5mm tall) to keep PCB perfectly level
     pad_size = 5.0
     with BuildSketch(floor_plane):
         for px in [-(ups_w + ups_tol) / 2 + pad_size / 2, (ups_w + ups_tol) / 2 - pad_size / 2]:
