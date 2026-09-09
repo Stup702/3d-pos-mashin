@@ -99,53 +99,55 @@ def make_screen_test_plate(dsi_gap_w: float = 22.0, dsi_gap_x: float = 0.0) -> C
     screen_w = 75.8
     screen_l = 120.8
     screen_ribbon_gap = 1.5
-    pocket_w = screen_w + screen_ribbon_gap + 0.4
-    pocket_l = screen_l + 0.4
-    pocket_depth = 6.0
-    balcony_t = 4.0
+    pocket_w = screen_w + screen_ribbon_gap + 0.4 # 77.7 mm
+    pocket_l = screen_l + 0.4                     # 121.2 mm
+    pocket_depth = 5.0                             # 5.0mm depth for glass + bezel
+    standoff_depth = 5.2                           # Full 5.2mm sleeve for 5.0mm brass standoff
+    base_pad_h = 2.0                               # 2.0mm backing shoulder for M2.5 screw
     hole_x = 68.0
     hole_y = 113.0
 
-    frame_w = pocket_w + 8.0
-    frame_l = pocket_l + 8.0
-    total_h = balcony_t + pocket_depth
+    frame_w = pocket_w + 6.0  # 83.7 mm
+    frame_l = pocket_l + 6.0  # 127.2 mm
+    shelf_z = base_pad_h + standoff_depth # 7.2 mm
+    total_h = shelf_z + pocket_depth      # 12.2 mm
 
     with BuildPart() as bp:
-        # 1. Outer Solid Frame Block with central through-window
+        # 1. Main outer solid block with central open viewing window (Z in [0, total_h])
         with BuildSketch(Plane.XY):
             Rectangle(frame_w, frame_l)
             # Central viewing window is a COMPLETE through-hole:
             Rectangle(screen_w - 18.0, screen_l - 18.0, mode=Mode.SUBTRACT)
         extrude(amount=total_h)
 
-        # 2. Screen Pocket (recess from Z = balcony_t to Z = total_h)
-        with BuildSketch(Plane.XY.offset(balcony_t)):
+        # 2. Screen Pocket (recess from Z = shelf_z to Z = total_h)
+        with BuildSketch(Plane.XY.offset(shelf_z)):
             with Locations((screen_ribbon_gap / 2, 0)):
                 Rectangle(pocket_w, pocket_l)
             Rectangle(screen_w - 18.0, screen_l - 18.0, mode=Mode.SUBTRACT)
         extrude(amount=pocket_depth + 1.0, mode=Mode.SUBTRACT)
 
-        # 3. 4 Corner M2.5 Screw Holes (through balcony Z in [0, balcony_t])
+        # 3. 5.2mm Deep Standoff Sleeves (dia 6.0mm) from Z = shelf_z down to Z = base_pad_h
+        with BuildSketch(Plane.XY.offset(shelf_z)):
+            for sx in [-hole_x / 2, hole_x / 2]:
+                for sy in [-hole_y / 2, hole_y / 2]:
+                    with Locations((sx, sy)):
+                        Circle(radius=6.0 / 2) # dia 6.0mm for 5.0mm brass standoff
+        extrude(amount=-standoff_depth, mode=Mode.SUBTRACT)
+
+        # 4. M2.5 Screw Clearance Holes (dia 3.0mm) through the 2.0mm base pad
         with BuildSketch(Plane.XY):
             for sx in [-hole_x / 2, hole_x / 2]:
                 for sy in [-hole_y / 2, hole_y / 2]:
                     with Locations((sx, sy)):
                         Circle(radius=3.0 / 2)
-        extrude(amount=balcony_t + 1.0, mode=Mode.SUBTRACT)
-
-        # 4. 4 Standoff relief counterbores (from Z = balcony_t down by 2.0mm)
-        with BuildSketch(Plane.XY.offset(balcony_t)):
-            for sx in [-hole_x / 2, hole_x / 2]:
-                for sy in [-hole_y / 2, hole_y / 2]:
-                    with Locations((sx, sy)):
-                        Circle(radius=6.0 / 2)
-        extrude(amount=-2.0, mode=Mode.SUBTRACT)
+        extrude(amount=base_pad_h + 0.1, mode=Mode.SUBTRACT)
 
         # 5. DSI Cable Pass-Through Notch on Front Chin (-Y)
         with BuildSketch(Plane.XY):
             with Locations((dsi_gap_x, -frame_l / 4)):
                 Rectangle(dsi_gap_w, frame_l / 2)
-        extrude(amount=balcony_t + 1.0, mode=Mode.SUBTRACT)
+        extrude(amount=shelf_z + 0.1, mode=Mode.SUBTRACT)
 
     return bp.part
 
