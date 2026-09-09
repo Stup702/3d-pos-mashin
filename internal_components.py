@@ -55,7 +55,8 @@ def build_ups_dummy(floor_plane: Plane) -> Compound:
         extrude(amount=UPS_PCB_T / 2, both=True)
 
         # B. DC Barrel Jack (Short edge facing left wall X = -50)
-        jack_local_y = UPS_CY_LOCAL - (UPS_L / 2) + 14.0
+        # Measured: 18mm from fan-side edge, 9mm width, 11mm height
+        jack_local_y = UPS_CY_LOCAL + (UPS_L / 2) - 18.0 - 4.5 # -10.75 mm
         jack_cx = UPS_CX - (UPS_W / 2) + 7.0
         with BuildSketch(floor_plane.offset(base_z + UPS_PCB_T + 5.5)):
             with Locations((jack_cx, jack_local_y)):

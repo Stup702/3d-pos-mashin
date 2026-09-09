@@ -434,16 +434,20 @@ with BuildPart() as ups_cradle:
 case_bottom = case_bottom + ups_cradle.part
 
 # DC Barrel Jack Port Cutout on Left Wall (X = -50)
-# Aligned with the bottom barrel jack on the short edge of the elevated UPS (Z = 9.0mm)
-jack_local_y = ups_cy_local - (ups_l / 2) + 14.0
-jack_world_pt = floor_plane.from_local_coords((ups_cx, jack_local_y, 9.0))
+# Measured: 18mm from fan/bat rear edge, 9mm width -> center Y = -10.75mm
+# Height: 3.5mm pedestal + 1.6mm PCB + 3.0mm bottom margin + 3.65/2 = 9.925mm above floor
+jack_rear_edge_y = ups_cy_local + (ups_l / 2.0) # +11.75 mm
+jack_local_y = jack_rear_edge_y - 18.0 - 4.5    # -10.75 mm
+jack_z = ups_pedestal_h + ups_pcb_t + 3.0 + 3.65 / 2.0 # 9.925 mm
+jack_world_pt = floor_plane.from_local_coords((ups_cx, jack_local_y, jack_z))
 
 with BuildPart() as dc_jack_port:
     with BuildSketch(Plane.YZ.offset(-55)):
         with Locations((jack_world_pt.Y, jack_world_pt.Z)):
             Circle(radius=11.0 / 2) # 11mm clearance hole for DC barrel plug
-    extrude(amount=15.0)
+    extrude(amount=20.0)
 case_bottom = case_bottom - dc_jack_port.part
+case_top = case_top - dc_jack_port.part
 
 # --- 2. Cooling Fan Slot & Vents (Middle Section: LD3007MS 30mm Pi-FAN) ---
 # Spec: LD3007MS, 30mm square x 7mm, 24mm x 24mm mounting hole spacing
