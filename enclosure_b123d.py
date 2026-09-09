@@ -387,8 +387,8 @@ floor_plane = Plane(
 # --- 1. UPS Board Cradle (Front Chin Section) ---
 # Board size: 56.20mm (along Y/wall) x 79.08mm (along X)
 # Height: 3.5mm standoff pedestal + 1.6mm PCB friction lip = 5.1mm total wall height
-ups_w = 79.15
-ups_l = 54.50
+ups_w = 78.30
+ups_l = 55.50
 ups_tol = 0.6
 ups_wall = 1.5
 ups_pedestal_h = 3.5
@@ -396,14 +396,14 @@ ups_pcb_t = 1.6
 ups_total_h = ups_pedestal_h + ups_pcb_t # 5.1mm
 
 # Hugs the left wall (inner wall at X = -46.0)
-ups_cx = -4.125
+ups_cx = -5.05
 ups_cy_local = -16.0
 
 # 4mm screw hole boss: 39.7mm from left wall, 18.9mm from fan-side (top/rear) edge
-ups_left_edge_x = ups_cx - ups_w / 2.0  # -43.70 mm
-ups_boss_x = ups_left_edge_x + 39.70    # -4.00 mm
-ups_rear_edge_y = ups_cy_local + ups_l / 2.0 # +11.25 mm
-ups_boss_y = ups_rear_edge_y - 18.90    # -7.65 mm
+ups_left_edge_x = ups_cx - ups_w / 2.0  # -44.20 mm
+ups_boss_x = ups_left_edge_x + 39.70    # -4.50 mm
+ups_rear_edge_y = ups_cy_local + ups_l / 2.0 # +11.75 mm
+ups_boss_y = ups_rear_edge_y - 18.90    # -7.15 mm
 ups_boss_outer_d = 8.0
 ups_boss_hole_d = 4.0
 

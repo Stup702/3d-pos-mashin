@@ -13,10 +13,10 @@ from build123d import *
 import math
 
 # Dimensions
-UPS_W = 79.15          # Along X
-UPS_L = 54.50          # Along Y
+UPS_W = 78.30          # Along X
+UPS_L = 55.50          # Along Y
 UPS_PCB_T = 1.6        # PCB thickness
-UPS_CX = -4.125        # Hugged to left inner wall
+UPS_CX = -5.05         # Hugged to left inner wall
 UPS_CY_LOCAL = -16.0   # Cradle center
 
 BAT_W = 67.80          # Along X
