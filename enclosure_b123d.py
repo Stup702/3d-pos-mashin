@@ -629,20 +629,19 @@ button_plunger = plunger_builder.part
 
 # Drop-in Keystone Retaining Clip (Fills gap above button, locks plunger & switch)
 tol_y = 0.30
-tol_x = 0.15
 with BuildPart() as keystone_builder:
-    # 1. Outer Cap Plug (Segment 1)
-    with Locations((49.25, btn_y, 35.0)):
-        Box(1.5 - tol_x, 6.4 - tol_y, 14.0)
-    # 2. T-Track Flange Retention (Segment 2)
+    # 1. Outer Cap Plug (Segment 1): X in [48.45, 50.0]
+    with Locations((49.225, btn_y, 35.0)):
+        Box(1.55, 6.4 - tol_y, 14.0)
+    # 2. T-Track Flange Retention (Segment 2): X in [45.95, 48.55] (0.10mm overlap at internal seams)
     with Locations((47.25, btn_y, 35.0)):
-        Box(2.5 - tol_x, 9.2 - tol_y, 14.0)
-    # 3. Intermediate Nib Neck (Segment 3)
+        Box(2.60, 9.2 - tol_y, 14.0)
+    # 3. Intermediate Nib Neck (Segment 3): X in [44.65, 46.05] (0.10mm overlap)
     with Locations((45.35, btn_y, 35.0)):
-        Box(1.3 - tol_x, 5.4 - tol_y, 14.0)
-    # 4. Switch Hold-Down Block (Segment 4, sits 0.4mm above switch top at Z=31.0)
-    with Locations((42.80, btn_y, 35.0)):
-        Box(3.8 - tol_x, 6.6 - tol_y, 14.0)
+        Box(1.40, 5.4 - tol_y, 14.0)
+    # 4. Switch Hold-Down Block (Segment 4): X in [40.90, 44.75] (0.10mm overlap, sits 0.4mm above switch top)
+    with Locations((42.825, btn_y, 35.0)):
+        Box(3.85, 6.6 - tol_y, 14.0)
 
     # Cut concave clearance arches at bottom
     with Locations((50.25, btn_y, btn_z)):
