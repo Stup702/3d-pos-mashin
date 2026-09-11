@@ -628,20 +628,26 @@ with BuildPart() as plunger_builder:
 button_plunger = plunger_builder.part
 
 # Drop-in Keystone Retaining Clip (Fills gap above button, locks plunger & switch)
+# Asymmetric overlap architecture: narrower segments extend 0.10mm into wider cavities
+# to fuse into a single solid while strictly preventing any wide-shoulder collision with slot walls!
 tol_y = 0.30
 with BuildPart() as keystone_builder:
-    # 1. Outer Cap Plug (Segment 1): X in [48.45, 50.0]
-    with Locations((49.225, btn_y, 35.0)):
-        Box(1.55, 6.4 - tol_y, 14.0)
-    # 2. T-Track Flange Retention (Segment 2): X in [45.95, 48.55] (0.10mm overlap at internal seams)
+    # 1. Outer Cap Plug (Segment 1): X in [48.40, 50.00] -> length 1.60, center 49.20
+    # Width 6.10mm (6.4 - tol_y); extends 0.10mm into Zone 2 where cavity is 9.2mm wide
+    with Locations((49.20, btn_y, 35.0)):
+        Box(1.60, 6.4 - tol_y, 14.0)
+    # 2. T-Track Flange Retention (Segment 2): X strictly in [46.05, 48.45] -> length 2.40, center 47.25
+    # Width 8.90mm (9.2 - tol_y); stopped cleanly inside Zone 2 so its wide shoulders never collide with narrower walls
     with Locations((47.25, btn_y, 35.0)):
-        Box(2.60, 9.2 - tol_y, 14.0)
-    # 3. Intermediate Nib Neck (Segment 3): X in [44.65, 46.05] (0.10mm overlap)
+        Box(2.40, 9.2 - tol_y, 14.0)
+    # 3. Intermediate Nib Neck (Segment 3): X in [44.60, 46.10] -> length 1.50, center 45.35
+    # Width 5.10mm (5.4 - tol_y); extends 0.05mm into Zone 2 (9.2mm wide) and 0.10mm into Zone 4 (6.6mm wide)
     with Locations((45.35, btn_y, 35.0)):
-        Box(1.40, 5.4 - tol_y, 14.0)
-    # 4. Switch Hold-Down Block (Segment 4): X in [40.90, 44.75] (0.10mm overlap, sits 0.4mm above switch top)
-    with Locations((42.825, btn_y, 35.0)):
-        Box(3.85, 6.6 - tol_y, 14.0)
+        Box(1.50, 5.4 - tol_y, 14.0)
+    # 4. Switch Hold-Down Block (Segment 4): X in [40.90, 44.65] -> length 3.75, center 42.775
+    # Width 6.30mm (6.6 - tol_y); stopped cleanly before Zone 3
+    with Locations((42.775, btn_y, 35.0)):
+        Box(3.75, 6.6 - tol_y, 14.0)
 
     # Cut concave clearance arches at bottom
     with Locations((50.25, btn_y, btn_z)):
