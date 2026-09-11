@@ -226,7 +226,7 @@ with BuildPart() as pos_lip:
         for bx, by in boss_locs:
             with BuildSketch(Plane.XY.offset(50)):
                 with Locations((bx, by)):
-                    Rectangle(15, 10.1)
+                    Rectangle(25, 25)
             extrude(amount=-100)
         with BuildSketch(Plane.XY.offset(50)):
             with Locations((0, 170)):
@@ -261,7 +261,7 @@ with BuildPart() as neg_lip:
         for bx, by in boss_locs:
             with BuildSketch(Plane.XY.offset(50)):
                 with Locations((bx, by)):
-                    Rectangle(15, 10.1)
+                    Rectangle(25, 25)
             extrude(amount=-100)
         with BuildSketch(Plane.XY.offset(50)):
             with Locations((0, 170)):
@@ -308,20 +308,23 @@ def build_pn532_slider():
 # Top Lid (Clean, seamless faceplate with zero screw holes)
 case_top = (master_shell_part - bottom_mask_solid) - lip_negative_solid
 
-# Blind Heat-Set Insert Holes in Top Lid (M3 x 4mm insert: hole diameter 4.0mm, depth 6.5mm)
+# Blind Heat-Set Insert Holes in Top Lid (M3 x 4mm insert: hole diameter 3.8mm, depth 6.5mm)
+# Starts 3.0mm below z_cut to penetrate the full sloped boss face -> 100% round circular hole!
+insert_hole_d = 3.8 # Sized smaller than M3 brass insert knurl OD (4.2mm) for strong plastic grip
+insert_chamfer_d = 4.1
 with BuildPart() as insert_holes:
     for bx, by in boss_locs:
         z_cut = get_seam_z(by)
-        # Blind cylindrical hole drilled UPWARDS from the parting seam into the boss
-        with BuildSketch(Plane.XY.offset(z_cut - 0.1)):
+        # Blind cylindrical hole drilled UPWARDS from below the parting seam into the boss
+        with BuildSketch(Plane.XY.offset(z_cut - 3.0)):
             with Locations((bx, by)):
-                Circle(radius=4.0 / 2)
-        extrude(amount=6.6)
+                Circle(radius=insert_hole_d / 2)
+        extrude(amount=9.6)
         # 45 deg lead-in chamfer for easy alignment when pressing with soldering iron
-        with BuildSketch(Plane.XY.offset(z_cut - 0.1)):
+        with BuildSketch(Plane.XY.offset(z_cut - 3.0)):
             with Locations((bx, by)):
-                Circle(radius=4.6 / 2)
-        extrude(amount=0.8)
+                Circle(radius=insert_chamfer_d / 2)
+        extrude(amount=3.6)
 case_top = case_top - insert_holes.part
 
 # Bottom Tub
@@ -436,26 +439,19 @@ with BuildPart() as ups_cradle:
             Rectangle(ups_w + ups_tol, ups_l + ups_tol, mode=Mode.SUBTRACT)
     extrude(amount=ups_total_h)
 
-    # C. Dual Cable Pass-Through Notches (Rear +Y & Right +X Walls)
-    # 1. Fan-side rear wall (+Y) notch for jumper wires to fan & RPi GPIO:
-    ups_rear_notch_w = 22.0
-    ups_rear_notch_cx = 21.0
-    ups_rear_wall_cy = ups_cy_local + (ups_l + ups_tol + ups_wall) / 2.0
+    # C. Open Cable Bay in Upper-Right Corner (Fan-Side Rear + Right Side)
+    # Replaces the entire top-right corner of the wall with an open cable routing bay
+    # Spans from X = +14.0mm to +42.0mm, and Y = -6.5mm to +15.0mm, flush to inner floor!
+    corner_cut_w = 28.0
+    corner_cut_l = 21.5
+    corner_cut_cx = 28.0
+    corner_cut_cy = 4.25
     with BuildSketch(floor_plane.offset(-2.0)):
-        with Locations((ups_rear_notch_cx, ups_rear_wall_cy)):
-            Rectangle(ups_rear_notch_w, ups_wall * 4.0)
+        with Locations((corner_cut_cx, corner_cut_cy)):
+            Rectangle(corner_cut_w, corner_cut_l)
     extrude(amount=ups_total_h + 4.0, mode=Mode.SUBTRACT)
 
-    # 2. Right-side wall (+X) notch for side cable routing towards front corridor & power switch:
-    ups_right_notch_w = 14.0
-    ups_right_notch_cy = -2.0
-    ups_right_wall_cx = ups_cx + (ups_w + ups_tol + ups_wall) / 2.0
-    with BuildSketch(floor_plane.offset(-2.0)):
-        with Locations((ups_right_wall_cx, ups_right_notch_cy)):
-            Rectangle(ups_wall * 4.0, ups_right_notch_w)
-    extrude(amount=ups_total_h + 4.0, mode=Mode.SUBTRACT)
-
-    # 3. Left-side wall (-X) notch for square DC barrel jack body (12mm wide, flush to floor):
+    # D. Left-side wall (-X) notch for square DC barrel jack body (12mm wide, flush to floor):
     # Allows the 2.2mm protruding square barrel jack to seat flush with zero clash!
     ups_left_wall_cx = ups_cx - (ups_w + ups_tol + ups_wall) / 2.0
     ups_jack_notch_w = 12.0
@@ -464,7 +460,7 @@ with BuildPart() as ups_cradle:
             Rectangle(ups_wall * 4.0, ups_jack_notch_w)
     extrude(amount=ups_total_h + 4.0, mode=Mode.SUBTRACT)
 
-    # D. 4 Corner Support Pads (3.5mm tall) to keep PCB perfectly level
+    # E. 4 Corner Support Pads (3.5mm tall) to keep PCB perfectly level
     pad_size = 5.0
     with BuildSketch(floor_plane):
         for px in [-(ups_w + ups_tol) / 2 + pad_size / 2, (ups_w + ups_tol) / 2 - pad_size / 2]:
@@ -475,16 +471,14 @@ with BuildPart() as ups_cradle:
 
 case_bottom = case_bottom + ups_cradle.part
 
-# Open U-Port on Case Wall: 12mm width from PCB floor level (Z = 14.0mm) up to 12mm top arch
+# Open U-Port on Case Left Wall:
+# Modeled directly on floor_plane so that it is 100% SQUARE and ALIGNED with the PCB floor (zero angle tilt!)
+# 12.0mm wide along Y, perfectly flat and perpendicular to the UPS board!
 with BuildPart() as dc_jack_port:
-    with BuildSketch(Plane.YZ.offset(-55)):
-        # Lower U-body: from world Z = 14.0 (below PCB) up to jack center
-        with Locations((jack_world_pt.Y, (14.0 + jack_world_pt.Z) / 2.0)):
-            Rectangle(12.0, jack_world_pt.Z - 14.0)
-        # Upper arch (12mm diameter / 6mm radius)
-        with Locations((jack_world_pt.Y, jack_world_pt.Z)):
-            Circle(radius=12.0 / 2.0)
-    extrude(amount=20.0)
+    with BuildSketch(floor_plane):
+        with Locations((-47.5, jack_local_y)):
+            Rectangle(25.0, 12.0)
+    extrude(amount=16.0)
 case_bottom = case_bottom - dc_jack_port.part
 case_top = case_top - dc_jack_port.part
 

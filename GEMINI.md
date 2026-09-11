@@ -36,8 +36,8 @@ The side profile is a wedge defined by the polygon:
 2. **UPS Module**:
    * $78.30\text{ mm} \times 55.50\text{ mm}$, centered at $(X = -5.05, Y = -16.00)$ on the slanted floor.
    * Toolless Locating Pole: $3.5\text{ mm}$ shoulder ($\varnothing 8.0\text{ mm}$) with a $4.0\text{ mm}$ tall locating pole ($\varnothing 3.70\text{ mm}$) fitting into the PCB's $4.0\text{ mm}$ hole and protruding $2.4\text{ mm}$ above the board for hot glue gun adhesion. No screws needed near delicate chips!
-   * DC barrel jack: Left wall open U-port ($12.0\text{ mm}$ wide from PCB floor $Z = 14.0\text{ mm}$ up to $12\text{ mm}$ top arch) plus matching $12.0\text{ mm}$ cradle wall cutout at $Y = -10.75\text{ mm}$. Accommodates the $2.2\text{ mm}$ square body protrusion with zero clash.
-   * Dual cable pass-through notches: (1) On fan-side rear wall at $X = +21.0\text{ mm}$, width $22.0\text{ mm}$, cut flush to inner floor for female Dupont jumper wires; (2) On right wall (+X) at $Y = -2.0\text{ mm}$, width $14.0\text{ mm}$, cut flush to inner floor for side cable routing towards front corridor.
+   * DC barrel jack: Left wall open rectangular port ($12.0\text{ mm}$ wide along Y, $16.0\text{ mm}$ tall) modeled directly on `floor_plane` perpendicular to the PCB floor (zero angular tilt!), plus matching $12.0\text{ mm}$ cradle wall cutout at $Y = -10.75\text{ mm}$. Accommodates the $2.2\text{ mm}$ square body protrusion with zero clash.
+   * Open Corner Cable Bay: Entire upper-right corner of the cradle wall is cut open ($X \in [14.0, 42.0]\text{ mm}$, $Y \in [-6.5, 15.0]\text{ mm}$, flush to inner floor) for fan jumper wires, RPi GPIO header, and front corridor cable routing.
 3. **Cooling Fan (LD3007MS 30mm Pi-FAN)**:
    * $30\text{ mm} \times 30\text{ mm} \times 7\text{ mm}$, centered at $(X = 0, Y = +48.0\text{ mm})$.
    * Mounting pitch: $24.0\text{ mm} \times 24.0\text{ mm}$.
@@ -52,4 +52,4 @@ The side profile is a wedge defined by the polygon:
 5. **PN532 NFC Module**:
    * Slider slot embedded in the rear sloped panel ($p_3 \to p_5$).
 6. **Case Fasteners**:
-   * 4 main M3 casing screws (M3 $\times$ 16mm) inserted from desk base underneath into internal pillars at $(\pm 42, -50)$ ($3.5\text{ mm}$ counterbore) and $(\pm 42, 130)$ ($50.5\text{ mm}$ counterbore, leaving $11.9\text{ mm}$ flange). Top lid receives M3 brass heat-set inserts.
+   * 4 main M3 casing screws (M3 $\times$ 16mm) inserted from desk base underneath into internal pillars at $(\pm 42, -50)$ ($3.5\text{ mm}$ counterbore) and $(\pm 42, 130)$ ($50.5\text{ mm}$ counterbore, leaving $11.9\text{ mm}$ flange). Top lid receives M3 brass heat-set inserts into 100% full round blind holes ($\varnothing 3.8\text{ mm} \times 6.6\text{ mm}$ deep with $\varnothing 4.1\text{ mm}$ lead-in chamfer, starting $3.0\text{ mm}$ below the parting seam to penetrate the $14.68^\circ$ sloped boss face without semicircular slicing).
