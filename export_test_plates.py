@@ -18,7 +18,8 @@ from enclosure_b123d import (
     screen_plane, floor_plane,
     ups_cx, ups_cy_local, ups_w, ups_l,
     bat_cx, bat_cy_local, bat_w, bat_l,
-    fan_cx, fan_cy_local, fan_size
+    fan_cx, fan_cy_local, fan_size,
+    button_plunger, button_keystone
 )
 
 OUTPUT_DIR = os.path.dirname(__file__)
@@ -94,20 +95,36 @@ def make_fan_test_plate() -> Compound:
     bb = fan_plate.bounding_box()
     return fan_plate.moved(Location((-bb.center().X, -bb.center().Y, -bb.min.Z)))
 
+def make_button_test_plate() -> Compound:
+    """Direct slice of case_bottom around the right-wall power button cradle and U-slot (includes full floor)."""
+    with BuildPart() as btn_cutter:
+        with Locations((50.0 - 8.0, 32.0, 25.0)):
+            Box(22.0, 22.0, 30.0)
+    btn_cutout = case_bottom & btn_cutter.part
+    bb = btn_cutout.bounding_box()
+    return btn_cutout.moved(Location((-bb.center().X, -bb.center().Y, -bb.min.Z)))
+
 if __name__ == "__main__":
     print("Generating rapid test-print gauge plates (Direct Enclosure Slice)...")
     scr_plate = make_screen_test_plate()
     ups_plate = make_ups_test_plate()
     bat_plate = make_battery_test_plate()
     fan_plate = make_fan_test_plate()
+    btn_plate = make_button_test_plate()
 
     export_stl(scr_plate, os.path.join(OUTPUT_DIR, "test_plate_screen.stl"), tolerance=0.05, angular_tolerance=0.2)
     export_stl(ups_plate, os.path.join(OUTPUT_DIR, "test_plate_ups.stl"), tolerance=0.05, angular_tolerance=0.2)
     export_stl(bat_plate, os.path.join(OUTPUT_DIR, "test_plate_battery.stl"), tolerance=0.05, angular_tolerance=0.2)
     export_stl(fan_plate, os.path.join(OUTPUT_DIR, "test_plate_fan.stl"), tolerance=0.05, angular_tolerance=0.2)
+    export_stl(btn_plate, os.path.join(OUTPUT_DIR, "test_plate_button.stl"), tolerance=0.05, angular_tolerance=0.2)
+    export_stl(button_plunger, os.path.join(OUTPUT_DIR, "test_button_plunger.stl"), tolerance=0.02, angular_tolerance=0.1)
+    export_stl(button_keystone, os.path.join(OUTPUT_DIR, "test_button_keystone.stl"), tolerance=0.02, angular_tolerance=0.1)
 
     print("✓ Successfully exported direct-cut test plates:")
     print("  1. test_plate_screen.stl")
     print("  2. test_plate_ups.stl")
     print("  3. test_plate_battery.stl")
     print("  4. test_plate_fan.stl")
+    print("  5. test_plate_button.stl")
+    print("  6. test_button_plunger.stl")
+    print("  7. test_button_keystone.stl")

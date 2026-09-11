@@ -37,8 +37,14 @@ The side profile is a wedge defined by the polygon:
    * $78.30\text{ mm} \times 55.50\text{ mm}$ PCB. Pocket expanded with $+1.0\text{ mm}$ give on right ($+X$) and top ($+Y$) ($79.90\text{ mm} \times 57.10\text{ mm}$, centered at $X = -4.55, Y = -15.50$), eliminating perimeter friction while keeping left stop at $X = -44.50\text{ mm}$ and front stop at $Y = -44.05\text{ mm}$ fixed.
    * Toolless Locating Pole: $3.5\text{ mm}$ shoulder ($\varnothing 8.0\text{ mm}$) at fixed coordinates $(X = -4.50, Y = -7.15\text{ mm})$. Pin diameter reduced to $\varnothing 3.45\text{ mm}$ (from $3.70\text{ mm}$) with a $45^\circ \times 0.8\text{ mm}$ conical lead-in pilot chamfer for painless, smooth drop-in registration into the PCB's $4.0\text{ mm}$ hole. Protrudes $2.4\text{ mm}$ above the PCB for hot glue gun mushrooming.
    * DC barrel jack: Left wall port ($12.0\text{ mm}$ wide along Y, $16.0\text{ mm}$ tall) and matching cradle cutout modeled with a $3.5\text{ mm}$ solid half-wall threshold from $Z = 0 \to 3.5\text{ mm}$, perfectly flush with the PCB underside. Completely blocks the view underneath the PCB and provides a rigid continuous support beam preventing PCB flex when inserting power plugs.
-   * Open Corner Cable Bay: Entire upper-right corner of the cradle wall is cut open ($X \in [14.0, 42.0]\text{ mm}$, $Y \in [-6.5, 15.0]\text{ mm}$, flush to inner floor). Standalone top-right corner pillar removed; 3 remaining corner pads (bottom-left, bottom-right, top-left) plus central boss shoulder form an unshakeable quad-point kinematic support plane.
-3. **Cooling Fan (LD3007MS 30mm Pi-FAN)**:
+   * Open Corner Cable Bay: Upper-right corner of the cradle wall is cut open ($X \in [3.0, 43.0]\text{ mm}$, $Y \in [-7.0, 16.0]\text{ mm}$, flush to inner floor), reducing top wall length by another $1.0\text{ cm}$ toward the left for maximum wiring clearance. Standalone top-right corner pillar removed; 3 remaining corner pads (bottom-left, bottom-right, top-left) plus central boss shoulder form an unshakeable quad-point kinematic support plane.
+3. **Right-Wall Power Button System (Option A: Drop-in T-Plunger with Full Fat Nib)**:
+   * Location: Right wall outer face at $X = +50.0\text{ mm}$, inner face at $X = +45.5\text{ mm}$, centered at $Y = +32.0\text{ mm}$, $Z = 28.0\text{ mm}$ (midway between floor and parting seam $Z = 36.71\text{ mm}$).
+   * Drop-in T-Plunger: Monolithic stepped cylinder with cap ($\varnothing 5.8\text{ mm} \times 2.3\text{ mm}$, $0.8\text{ mm}$ proud at rest), retention flange ($\varnothing 8.6\text{ mm} \times 1.5\text{ mm}$), and Full Fat Nib ($\varnothing 4.8\text{ mm} \times 1.1\text{ mm}$ with $0.3\text{ mm} \times 45^\circ$ lead chamfer). $0.45\text{ mm}$ chord shaved off the bottom for horizontal printing directly on PEI bed with zero supports.
+   * Vertical U-Slot Architecture: Stepped vertical channel in `case_bottom` right wall and internal cradle boss extends through the parting seam to $Z = 38.0\text{ mm}$ for effortless drop-in assembly. Features a **solid pedestal shelf from the inclined floor up to $Z = 25.0\text{ mm}$** ($Z \in [13.57, 25.0]\text{ mm}$, trimmed to `outer_solid_boundary & bottom_mask_solid` to eliminate any floating overhang over the $8.13^\circ$ underbelly) directly supporting the switch, and a **single narrow $1.6\text{ mm}$ vertical slit** in the back wall allowing the vertically-rotated switch legs to slide down and exit into the case interior.
+   * Drop-in Keystone Retaining Clip (`test_button_keystone.stl`): Tiny stepped slide-in plug ($289.3\text{ mm}^3$, 3-minute print) that drops into the U-slot after plunger and switch are installed. Fills the $5.8\text{ mm}$ gap on the outer wall into a clean circular aperture ($R = 3.2\text{ mm}$), captures the flange ($R = 4.6\text{ mm}$), and holds the switch down at $Z = 31.4\text{ mm}$. Its top face matches the $14.68^\circ$ parting seam (recessed $0.15\text{ mm}$ sub-flush), and is clamped down permanently when `case_top` is closed with zero supports needed.
+   * Motion Stroke: $0.3\text{ mm}$ pre-travel gap to switch dome, $0.4\text{ mm}$ dome snap travel ($0.7\text{ mm}$ total stroke), leaving $0.3\text{ mm}$ overtravel cushion before inner flange stop.
+4. **Cooling Fan (LD3007MS 30mm Pi-FAN)**:
    * $30\text{ mm} \times 30\text{ mm} \times 7\text{ mm}$, centered at $(X = 0, Y = +48.0\text{ mm})$.
    * Mounting pitch: $24.0\text{ mm} \times 24.0\text{ mm}$.
    * Fasteners: $2.3\text{ mm} \times 14\text{ mm}$ pan/button head screws inserted from underside into hex nuts on top of fan frame.
@@ -46,10 +52,10 @@ The side profile is a wedge defined by the polygon:
    * Underbelly counterbores: $\varnothing 5.2\text{ mm} \times 1.5\text{ mm}$ deep (leaves $2.0\text{ mm}$ floor flange). Total clamped stack: $2.0\text{ mm} + 2.0\text{ mm} + 7.0\text{ mm} = 11.0\text{ mm}$, leaving $3.0\text{ mm}$ thread protrusion for full hex nut engagement.
    * Air intake vents in the slanted floor directly beneath it.
    * Elevated $\approx 16.9\text{ mm}$ above the desk.
-4. **Battery Pack**:
+5. **Battery Pack**:
    * $67.80\text{ mm} \times 73.35\text{ mm} \times 17.00\text{ mm}$, centered at $(X = 0, Y = +104.5\text{ mm})$ before the rear drop.
    * Retention wall: $10.0\text{ mm}$ tall.
-5. **PN532 NFC Module**:
+6. **PN532 NFC Module**:
    * Slider slot embedded in the rear sloped panel ($p_3 \to p_5$).
-6. **Case Fasteners**:
+7. **Case Fasteners**:
    * 4 main M3 casing screws (M3 $\times$ 16mm) inserted from desk base underneath into internal pillars at $(\pm 42, -50)$ ($3.5\text{ mm}$ counterbore) and $(\pm 42, 130)$ ($50.5\text{ mm}$ counterbore, leaving $11.9\text{ mm}$ flange). Top lid receives M3 brass heat-set inserts into 100% full round blind holes ($\varnothing 3.8\text{ mm} \times 6.6\text{ mm}$ deep with $\varnothing 4.1\text{ mm}$ lead-in chamfer, starting $3.0\text{ mm}$ below the parting seam to penetrate the $14.68^\circ$ sloped boss face without semicircular slicing).

@@ -232,6 +232,11 @@ with BuildPart() as pos_lip:
             with Locations((0, 170)):
                 Rectangle(enc_width + 10, 50)
         extrude(amount=-100)
+        # Suppress lip joint at power button slot (Right wall, Y = 32.0, X = 50.0)
+        with BuildSketch(Plane.XY.offset(50)):
+            with Locations((48.0, 32.0)):
+                Rectangle(15.0, 20.0)
+        extrude(amount=-100)
         
     lip_positive = lip_positive - masks.part
 
@@ -266,6 +271,11 @@ with BuildPart() as neg_lip:
         with BuildSketch(Plane.XY.offset(50)):
             with Locations((0, 170)):
                 Rectangle(enc_width + 10, 50)
+        extrude(amount=-100)
+        # Suppress lip joint at power button slot (Right wall, Y = 32.0, X = 50.0)
+        with BuildSketch(Plane.XY.offset(50)):
+            with Locations((48.0, 32.0)):
+                Rectangle(15.0, 20.0)
         extrude(amount=-100)
         
     lip_negative = lip_negative - masks.part
@@ -455,11 +465,12 @@ with BuildPart() as ups_cradle:
     extrude(amount=ups_total_h)
 
     # C. Open Cable Bay in Upper-Right Corner (Fan-Side Rear + Right Side)
-    # Replaces the entire top-right corner of the wall with an open cable routing bay
-    # Spans from X = +14.0mm to +42.0mm, and Y = -6.5mm to +15.0mm, flush to inner floor!
-    corner_cut_w = 30.0
+    # Replaces the upper-right corner of the wall with an open cable routing bay
+    # Widened toward -X by 10.0mm (reduces top wall length by another centimeter!)
+    # Spans from X = +3.0mm to +43.0mm, and Y = -7.0mm to +16.0mm, flush to inner floor!
+    corner_cut_w = 40.0
     corner_cut_l = 23.0
-    corner_cut_cx = 28.0
+    corner_cut_cx = 23.0
     corner_cut_cy = 4.5
     with BuildSketch(floor_plane.offset(-2.0)):
         with Locations((corner_cut_cx, corner_cut_cy)):
@@ -584,8 +595,124 @@ with BuildPart() as bat_cradle:
     extrude(amount=bat_h)
 case_bottom = case_bottom + bat_cradle.part
 
+# --- 4. Right-Wall Momentary Power Button System (Option A: Drop-in T-Plunger with Full Fat Nib) ---
+# Location: Right wall (X_outer = +50.0mm, X_inner = +45.5mm), Y = +32.0mm, Z = 28.0mm
+btn_x = 50.0
+btn_y = 32.0
+btn_z = 28.0
+btn_seam_z = get_seam_z(btn_y) # 36.714 mm
+
+# T-Plunger Dimensions
+plunger_cap_d = 5.8
+plunger_cap_l = 2.3
+plunger_flange_d = 8.6
+plunger_flange_t = 1.5
+plunger_nib_d = 4.8  # Full Fat Nib (380% dome contact area, 0.8mm concentric radial margin)
+plunger_nib_l = 1.1
+
+# Plunger Solid (modeled in resting position, ready to slice horizontally)
+with BuildPart() as plunger_builder:
+    # 1. Outer Button Cap (protrudes 0.8mm proud of wall at rest)
+    with Locations((btn_x + 0.8 - plunger_cap_l / 2, btn_y, btn_z)):
+        Cylinder(radius=plunger_cap_d / 2, height=plunger_cap_l, rotation=(0, 90, 0))
+    # 2. Retention Flange (rests against wall stop at X = 48.5)
+    with Locations((48.5 - plunger_flange_t / 2, btn_y, btn_z)):
+        Cylinder(radius=plunger_flange_d / 2, height=plunger_flange_t, rotation=(0, 90, 0))
+    # 3. Full Fat Nib (pushes against switch dome)
+    with Locations((47.0 - plunger_nib_l / 2, btn_y, btn_z)):
+        Cylinder(radius=plunger_nib_d / 2, height=plunger_nib_l, rotation=(0, 90, 0))
+    # 4. Flat bed contact facet (0.45mm shaved off bottom along Z for PEI bed adhesion)
+    with Locations((btn_x, btn_y, btn_z - plunger_flange_d / 2 + 0.45 / 2)):
+        Box(20.0, 15.0, 0.45, mode=Mode.SUBTRACT)
+
+button_plunger = plunger_builder.part
+
+# Drop-in Keystone Retaining Clip (Fills gap above button, locks plunger & switch)
+tol_y = 0.30
+tol_x = 0.15
+with BuildPart() as keystone_builder:
+    # 1. Outer Cap Plug (Segment 1)
+    with Locations((49.25, btn_y, 35.0)):
+        Box(1.5 - tol_x, 6.4 - tol_y, 14.0)
+    # 2. T-Track Flange Retention (Segment 2)
+    with Locations((47.25, btn_y, 35.0)):
+        Box(2.5 - tol_x, 9.2 - tol_y, 14.0)
+    # 3. Intermediate Nib Neck (Segment 3)
+    with Locations((45.35, btn_y, 35.0)):
+        Box(1.3 - tol_x, 5.4 - tol_y, 14.0)
+    # 4. Switch Hold-Down Block (Segment 4, sits 0.4mm above switch top at Z=31.0)
+    with Locations((42.80, btn_y, 35.0)):
+        Box(3.8 - tol_x, 6.6 - tol_y, 14.0)
+
+    # Cut concave clearance arches at bottom
+    with Locations((50.25, btn_y, btn_z)):
+        Cylinder(radius=3.2, height=4.0, rotation=(0, 90, 0), mode=Mode.SUBTRACT)
+    with Locations((47.25, btn_y, btn_z)):
+        Cylinder(radius=4.6, height=3.5, rotation=(0, 90, 0), mode=Mode.SUBTRACT)
+    with Locations((45.35, btn_y, btn_z)):
+        Cylinder(radius=2.7, height=2.5, rotation=(0, 90, 0), mode=Mode.SUBTRACT)
+
+    # Trim bottom of switch hold-down block to Z=31.4 (0.4mm above switch top)
+    with Locations((42.80, btn_y, 25.0)):
+        Box(10.0, 10.0, 12.8, mode=Mode.SUBTRACT)
+
+# Trim top face with bottom_mask_solid lowered by 0.15mm (sub-flush to 14.68° parting seam):
+button_keystone = keystone_builder.part & bottom_mask_solid.moved(Location((0, 0, -0.15)))
+
+# Bottom Tub Cradle Boss & U-Slot Cutouts
+# Solid pedestal roots seamlessly all the way down into the inclined floor (Z = 13.5 to 25.0mm)
+# and a rear open slit for the solder legs to exit freely into the terminal interior.
+cradle_w = 14.0      # Y in [25.0, 39.0]
+cradle_depth = 8.5  # X in [37.0, 45.5] (retains robust side pillars)
+cradle_cx = 45.5 - cradle_depth / 2 # 41.25
+cradle_bot_z = 10.0 # Deep root into underbelly, trimmed by solid_enclosure_bottom
+cradle_h = btn_seam_z - cradle_bot_z
+
+with BuildPart() as button_cradle_boss_raw:
+    with Locations((cradle_cx, btn_y, cradle_bot_z + cradle_h / 2)):
+        Box(cradle_depth, cradle_w, cradle_h)
+
+button_cradle_boss = button_cradle_boss_raw.part & (outer_solid_boundary & bottom_mask_solid)
+
+with BuildPart() as button_cradle_cutters:
+    # 1. Outer cap U-slot: width 6.4mm, X in [48.5, 52.0]
+    with Locations((50.25, btn_y, btn_z)):
+        Cylinder(radius=6.4 / 2, height=4.0, rotation=(0, 90, 0))
+    with Locations((50.25, btn_y, btn_z + (40.0 - btn_z) / 2)):
+        Box(4.0, 6.4, 40.0 - btn_z)
+
+    # 2. T-track U-slot: width 9.2mm, X in [46.0, 48.5] (depth 2.5mm for 1.0mm travel)
+    with Locations((47.25, btn_y, btn_z)):
+        Cylinder(radius=9.2 / 2, height=2.5, rotation=(0, 90, 0))
+    with Locations((47.25, btn_y, btn_z + (40.0 - btn_z) / 2)):
+        Box(2.5, 9.2, 40.0 - btn_z)
+
+    # 3. Fat nib aperture: width 5.4mm, X in [44.7, 46.0]
+    with Locations((45.35, btn_y, btn_z)):
+        Cylinder(radius=5.4 / 2, height=1.3, rotation=(0, 90, 0))
+    with Locations((45.35, btn_y, btn_z + (40.0 - btn_z) / 2)):
+        Box(1.3, 5.4, 40.0 - btn_z)
+
+    # 4. Switch pocket: width 6.6mm, depth 3.8mm, X in [40.9, 44.7]
+    # Sits on the solid pedestal at Z = 25.0mm (zero cuts below Z = 25.0mm!)
+    pocket_cx = (40.9 + 44.7) / 2
+    pocket_depth = 44.7 - 40.9
+    with Locations((pocket_cx, btn_y, 25.0 + (40.0 - 25.0) / 2)):
+        Box(pocket_depth, 6.6, 40.0 - 25.0)
+
+    # 5. Rear Leg Slit: single narrow vertical line (1.6mm wide) for vertically aligned button legs!
+    # Cuts through the back wall into the case interior: X in [36.0, 41.5], Z in [24.5, 40.0]
+    slit_cx = (36.0 + 41.5) / 2
+    slit_depth = 41.5 - 36.0
+    with Locations((slit_cx, btn_y, 24.5 + (40.0 - 24.5) / 2)):
+        Box(slit_depth, 1.6, 40.0 - 24.5)
+
+case_bottom = (case_bottom + button_cradle_boss) - button_cradle_cutters.part
+
 print("Case Top Volume:", case_top.volume)
 print("Case Bottom Volume:", case_bottom.volume)
+print("Button Plunger Volume:", button_plunger.volume)
+print("Button Keystone Volume:", button_keystone.volume)
 
 if __name__ == "__main__":
     # ==========================================
@@ -593,9 +720,13 @@ if __name__ == "__main__":
     # ==========================================
     export_step(case_top, "case_top_b123d.step")
     export_step(case_bottom, "case_bottom_b123d.step")
+    export_step(button_plunger, "test_button_plunger.step")
+    export_step(button_keystone, "test_button_keystone.step")
     export_stl(case_top, "case_top_b123d.stl", tolerance=0.02, angular_tolerance=0.1)
     export_stl(case_bottom, "case_bottom_b123d.stl", tolerance=0.02, angular_tolerance=0.1)
-    print("Exported case_top and case_bottom successfully to STEP and STL!")
+    export_stl(button_plunger, "test_button_plunger.stl", tolerance=0.02, angular_tolerance=0.1)
+    export_stl(button_keystone, "test_button_keystone.stl", tolerance=0.02, angular_tolerance=0.1)
+    print("Exported case_top, case_bottom, button_plunger, and button_keystone successfully to STEP and STL!")
 
     # ==========================================
     # 7. STREAM TO OCP CAD VIEWER IN VS CODE
