@@ -40,7 +40,10 @@ The side profile is a wedge defined by the polygon:
    * Cable pass-through notch: On fan-side rear wall at $X = +16.0\text{ mm}$, width $12.0\text{ mm}$, cut flush to the inner floor for female Dupont jumper wires.
 3. **Cooling Fan (LD3007MS 30mm Pi-FAN)**:
    * $30\text{ mm} \times 30\text{ mm} \times 7\text{ mm}$, centered at $(X = 0, Y = +48.0\text{ mm})$.
-   * Mounting pitch: $24.0\text{ mm} \times 24.0\text{ mm}$ with full through-holes in $2.0\text{ mm}$ standoffs and floor.
+   * Mounting pitch: $24.0\text{ mm} \times 24.0\text{ mm}$.
+   * Fasteners: $2.3\text{ mm} \times 14\text{ mm}$ pan/button head screws inserted from underside into hex nuts on top of fan frame.
+   * Clearance holes: $\varnothing 2.6\text{ mm}$ through $3.5\text{ mm}$ floor and $2.0\text{ mm}$ standoffs.
+   * Underbelly counterbores: $\varnothing 5.2\text{ mm} \times 1.5\text{ mm}$ deep (leaves $2.0\text{ mm}$ floor flange). Total clamped stack: $2.0\text{ mm} + 2.0\text{ mm} + 7.0\text{ mm} = 11.0\text{ mm}$, leaving $3.0\text{ mm}$ thread protrusion for full hex nut engagement.
    * Air intake vents in the slanted floor directly beneath it.
    * Elevated $\approx 16.9\text{ mm}$ above the desk.
 4. **Battery Pack**:

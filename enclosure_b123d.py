@@ -474,6 +474,16 @@ fan_size = 30.0
 fan_hole_spacing = 24.0
 fan_cx = 0.0
 fan_cy_local = 48.0
+fan_standoff_h = 2.0
+fan_standoff_d = 5.5
+
+# Fasteners: 2.3mm screws (14mm length) inserted from the underside, tightening into hex nuts on top
+fan_screw_d = 2.3
+fan_hole_d = 2.6   # 2.6mm clearance hole (compensated for FDM 3D print shrinkage)
+fan_cb_d = 5.2     # 5.2mm underbelly counterbore for 4.2-4.4mm pan/button heads
+fan_cb_depth = 1.5 # 1.5mm deep into 3.5mm floor -> leaves 2.0mm solid floor flange
+# Stack: 2.0mm floor flange + 2.0mm standoff + 7.0mm fan = 11.0mm clamped
+# 14.0mm screw reaches 3.0mm above fan, providing full thread grip for the ~1.8mm hex nut!
 
 with BuildPart() as fan_mount:
     # 4 Corner Standoffs (2.0mm tall) on the inner floor
@@ -481,21 +491,30 @@ with BuildPart() as fan_mount:
         for fx in [-fan_hole_spacing / 2, fan_hole_spacing / 2]:
             for fy in [-fan_hole_spacing / 2, fan_hole_spacing / 2]:
                 with Locations((fan_cx + fx, fan_cy_local + fy)):
-                    Circle(radius=5.5 / 2)
-    extrude(amount=2.0)
+                    Circle(radius=fan_standoff_d / 2)
+    extrude(amount=fan_standoff_h)
 case_bottom = case_bottom + fan_mount.part
 
-# Fan Air Intake Vent & Screw Clearance Holes through the Slanted Bottom Floor
+# Fan Air Intake Vent, Screw Clearance Holes & Underbelly Counterbores through the Slanted Bottom Floor
 with BuildPart() as fan_vents:
     # 1. 4 Corner Screw Through-Holes (cut through both the 3.5mm floor AND the 2.0mm standoffs!)
     with BuildSketch(floor_plane):
         for fx in [-fan_hole_spacing / 2, fan_hole_spacing / 2]:
             for fy in [-fan_hole_spacing / 2, fan_hole_spacing / 2]:
                 with Locations((fan_cx + fx, fan_cy_local + fy)):
-                    Circle(radius=3.2 / 2)
+                    Circle(radius=fan_hole_d / 2)
     extrude(amount=10.0, both=True)
 
-    # 2. Air Intake Vent Slots (cut through the 3.5mm floor outwards)
+    # 2. 4 Underbelly Counterbores on the outside underbelly floor
+    # Cut from outer face (offset -wall - 0.1) inward by fan_cb_depth + 0.1
+    with BuildSketch(floor_plane.offset(-wall - 0.1)):
+        for fx in [-fan_hole_spacing / 2, fan_hole_spacing / 2]:
+            for fy in [-fan_hole_spacing / 2, fan_hole_spacing / 2]:
+                with Locations((fan_cx + fx, fan_cy_local + fy)):
+                    Circle(radius=fan_cb_d / 2)
+    extrude(amount=fan_cb_depth + 0.1)
+
+    # 3. Air Intake Vent Slots (cut through the 3.5mm floor outwards)
     with BuildSketch(floor_plane):
         with Locations((fan_cx, fan_cy_local)):
             for i in range(-2, 3):
