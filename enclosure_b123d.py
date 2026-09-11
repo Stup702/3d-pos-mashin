@@ -392,90 +392,112 @@ floor_plane = Plane(
 # Height: 3.5mm standoff pedestal + 1.6mm PCB friction lip = 5.1mm total wall height
 ups_w = 78.30
 ups_l = 55.50
-ups_tol = 0.6
+# +1.0mm give on top (+Y) and right (+X) to eliminate painful friction fit.
+# Left (-X) stop and front (-Y) stop remain fixed for DC barrel jack and chin alignment.
+ups_give_x = 1.0 # extra clearance on +X (right side)
+ups_give_y = 1.0 # extra clearance on +Y (top/fan side)
+ups_tol = 0.6    # base bilateral tolerance (0.3mm per side)
 ups_wall = 1.5
 ups_pedestal_h = 3.5
 ups_pcb_t = 1.6
 ups_total_h = ups_pedestal_h + ups_pcb_t # 5.1mm
 
-# Hugs the left wall (inner wall at X = -46.0)
-ups_cx = -5.05
-ups_cy_local = -16.0
+# Base coordinates: fixed left stop at X = -44.50, fixed front stop at Y = -44.05
+# With +1.0mm on right and +1.0mm on top:
+# Pocket spans: X in [-44.50, +35.40] (width = 79.90), Y in [-44.05, +13.05] (length = 57.10)
+ups_pocket_w = ups_w + ups_tol + ups_give_x # 79.90 mm
+ups_pocket_l = ups_l + ups_tol + ups_give_y # 57.10 mm
+ups_cx = -4.55       # Center shifted +0.5mm in X
+ups_cy_local = -15.50 # Center shifted +0.5mm in Y
 
 # 4mm screw hole boss: 39.7mm from left wall, 18.9mm from fan-side (top/rear) edge
-ups_left_edge_x = ups_cx - ups_w / 2.0  # -44.20 mm
-ups_boss_x = ups_left_edge_x + 39.70    # -4.50 mm
-ups_rear_edge_y = ups_cy_local + ups_l / 2.0 # +11.75 mm
-ups_boss_y = ups_rear_edge_y - 18.90    # -7.15 mm
+# Referenced to FIXED PCB datum:
+# PCB left edge is at X = -44.20, hole is at -44.20 + 39.70 = -4.50 mm
+# PCB rear edge is at Y = +11.75, hole is at +11.75 - 18.90 = -7.15 mm
+ups_boss_x = -4.50    # Unaltered: locks PCB to fixed datum & DC port
+ups_boss_y = -7.15    # Unaltered: locks PCB to fixed datum & DC port
 ups_boss_outer_d = 8.0
-ups_pin_d = 3.70 # Snug locating pole fitting inside the 4.0mm PCB hole
+ups_pin_d = 3.45 # Reduced from 3.70mm to 3.45mm for smooth, painless drop-in without FDM pin binding
 ups_pin_h = 4.00 # 4.0mm pole height (protrudes 2.4mm above 1.6mm PCB for hot glue gun adhesion)
 
 # DC Barrel Jack Port Position on Left Wall (X = -50)
 # Measured: 18mm from fan/bat rear edge, 9mm width -> center Y = -10.75mm
 # Height: 3.5mm pedestal + 1.6mm PCB + 3.0mm bottom margin + 3.65/2 = 9.925mm above floor
-jack_rear_edge_y = ups_cy_local + (ups_l / 2.0) # +11.75 mm
+jack_rear_edge_y = -16.0 + (ups_l / 2.0) # +11.75 mm (nominal PCB rear edge)
 jack_local_y = jack_rear_edge_y - 18.0 - 4.5    # -10.75 mm
 jack_z = ups_pedestal_h + ups_pcb_t + 3.0 + 3.65 / 2.0 # 9.925 mm
 jack_world_pt = floor_plane.from_local_coords((ups_cx, jack_local_y, jack_z))
 
 with BuildPart() as ups_cradle:
-    # A. Center Locating Pedestal & Pole (3.5mm shoulder + 1.5mm pole into PCB 4mm hole)
+    # A. Center Locating Pedestal & Pole (3.5mm shoulder + 4.0mm pole into PCB 4mm hole)
     # Completely eliminates screws and screwdrivers near delicate chips!
     with BuildSketch(floor_plane):
         with Locations((ups_boss_x, ups_boss_y)):
             Circle(radius=ups_boss_outer_d / 2)
     extrude(amount=ups_pedestal_h)
 
+    # Locating pole: 3.2mm cylinder + 0.8mm conical lead-in tip (taper=45) for self-centering pilot action
     with BuildSketch(floor_plane.offset(ups_pedestal_h)):
         with Locations((ups_boss_x, ups_boss_y)):
             Circle(radius=ups_pin_d / 2)
-    extrude(amount=ups_pin_h)
+    extrude(amount=ups_pin_h - 0.8)
 
-    # B. Friction Fit Perimeter Wall (5.1mm tall)
+    with BuildSketch(floor_plane.offset(ups_pedestal_h + ups_pin_h - 0.8)):
+        with Locations((ups_boss_x, ups_boss_y)):
+            Circle(radius=ups_pin_d / 2)
+    extrude(amount=0.8, taper=45)
+
+    # B. Friction-Free Perimeter Wall (5.1mm tall) with +1mm give on top and right
     with BuildSketch(floor_plane):
         with Locations((ups_cx, ups_cy_local)):
-            Rectangle(ups_w + ups_tol + 2 * ups_wall, ups_l + ups_tol + 2 * ups_wall)
-            Rectangle(ups_w + ups_tol, ups_l + ups_tol, mode=Mode.SUBTRACT)
+            Rectangle(ups_pocket_w + 2 * ups_wall, ups_pocket_l + 2 * ups_wall)
+            Rectangle(ups_pocket_w, ups_pocket_l, mode=Mode.SUBTRACT)
     extrude(amount=ups_total_h)
 
     # C. Open Cable Bay in Upper-Right Corner (Fan-Side Rear + Right Side)
     # Replaces the entire top-right corner of the wall with an open cable routing bay
     # Spans from X = +14.0mm to +42.0mm, and Y = -6.5mm to +15.0mm, flush to inner floor!
-    corner_cut_w = 28.0
-    corner_cut_l = 21.5
+    corner_cut_w = 30.0
+    corner_cut_l = 23.0
     corner_cut_cx = 28.0
-    corner_cut_cy = 4.25
+    corner_cut_cy = 4.5
     with BuildSketch(floor_plane.offset(-2.0)):
         with Locations((corner_cut_cx, corner_cut_cy)):
             Rectangle(corner_cut_w, corner_cut_l)
     extrude(amount=ups_total_h + 4.0, mode=Mode.SUBTRACT)
 
-    # D. Left-side wall (-X) notch for square DC barrel jack body (12mm wide, flush to floor):
-    # Allows the 2.2mm protruding square barrel jack to seat flush with zero clash!
-    ups_left_wall_cx = ups_cx - (ups_w + ups_tol + ups_wall) / 2.0
+    # D. Left-side wall (-X) notch for square DC barrel jack body:
+    # Starts at ups_pedestal_h (3.5mm) to leave a solid 3.5mm half-wall beneath the PCB!
+    # Blocks the view underneath the PCB while leaving 12mm wide opening for the jack above.
+    ups_left_wall_cx = ups_cx - (ups_pocket_w + ups_wall) / 2.0
     ups_jack_notch_w = 12.0
-    with BuildSketch(floor_plane.offset(-2.0)):
+    with BuildSketch(floor_plane.offset(ups_pedestal_h)):
         with Locations((ups_left_wall_cx, jack_local_y)):
             Rectangle(ups_wall * 4.0, ups_jack_notch_w)
     extrude(amount=ups_total_h + 4.0, mode=Mode.SUBTRACT)
 
-    # E. 4 Corner Support Pads (3.5mm tall) to keep PCB perfectly level
+    # E. 3 Corner Support Pads (3.5mm tall) to keep PCB perfectly level
+    # Top-right (+X, +Y) pad is omitted so no standalone pillar obstructs cables!
+    # Quad-point support: 3 corner pads + large central boss shoulder form an unshakeable support plane.
     pad_size = 5.0
+    pad_coords = [
+        (-ups_pocket_w / 2 + pad_size / 2, -ups_pocket_l / 2 + pad_size / 2), # Bottom-Left (-X, -Y)
+        ( ups_pocket_w / 2 - pad_size / 2, -ups_pocket_l / 2 + pad_size / 2), # Bottom-Right (+X, -Y)
+        (-ups_pocket_w / 2 + pad_size / 2,  ups_pocket_l / 2 - pad_size / 2)  # Top-Left (-X, +Y)
+    ]
     with BuildSketch(floor_plane):
-        for px in [-(ups_w + ups_tol) / 2 + pad_size / 2, (ups_w + ups_tol) / 2 - pad_size / 2]:
-            for py in [-(ups_l + ups_tol) / 2 + pad_size / 2, (ups_l + ups_tol) / 2 - pad_size / 2]:
-                with Locations((ups_cx + px, ups_cy_local + py)):
-                    Rectangle(pad_size, pad_size)
+        for px, py in pad_coords:
+            with Locations((ups_cx + px, ups_cy_local + py)):
+                Rectangle(pad_size, pad_size)
     extrude(amount=ups_pedestal_h)
 
 case_bottom = case_bottom + ups_cradle.part
 
-# Open U-Port on Case Left Wall:
-# Modeled directly on floor_plane so that it is 100% SQUARE and ALIGNED with the PCB floor (zero angle tilt!)
-# 12.0mm wide along Y, perfectly flat and perpendicular to the UPS board!
+# Open Port on Case Left Wall:
+# Starts at floor_plane.offset(ups_pedestal_h) so that a solid 3.5mm threshold / half-wall
+# is retained at the outer wall, sealing the space beneath the PCB and reinforcing the chin!
 with BuildPart() as dc_jack_port:
-    with BuildSketch(floor_plane):
+    with BuildSketch(floor_plane.offset(ups_pedestal_h)):
         with Locations((-47.5, jack_local_y)):
             Rectangle(25.0, 12.0)
     extrude(amount=16.0)
