@@ -478,11 +478,11 @@ with BuildPart() as ups_cradle:
     extrude(amount=ups_total_h + 4.0, mode=Mode.SUBTRACT)
 
     # D. Left-side wall (-X) notch for square DC barrel jack body:
-    # Starts at ups_pedestal_h (3.5mm) to leave a solid 3.5mm half-wall beneath the PCB!
-    # Blocks the view underneath the PCB while leaving 12mm wide opening for the jack above.
+    # Starts at ups_total_h (5.1mm) to match the UPS perimeter wall height and PCB top surface!
+    # Conceals the 1.6mm raw PCB edge and blocks the view underneath the PCB completely.
     ups_left_wall_cx = ups_cx - (ups_pocket_w + ups_wall) / 2.0
     ups_jack_notch_w = 12.0
-    with BuildSketch(floor_plane.offset(ups_pedestal_h)):
+    with BuildSketch(floor_plane.offset(ups_total_h)):
         with Locations((ups_left_wall_cx, jack_local_y)):
             Rectangle(ups_wall * 4.0, ups_jack_notch_w)
     extrude(amount=ups_total_h + 4.0, mode=Mode.SUBTRACT)
@@ -505,10 +505,10 @@ with BuildPart() as ups_cradle:
 case_bottom = case_bottom + ups_cradle.part
 
 # Open Port on Case Left Wall:
-# Starts at floor_plane.offset(ups_pedestal_h) so that a solid 3.5mm threshold / half-wall
-# is retained at the outer wall, sealing the space beneath the PCB and reinforcing the chin!
+# Starts at floor_plane.offset(ups_total_h) so that a solid 5.1mm threshold / half-wall
+# is retained at the outer wall, flush with the UPS perimeter walls and top of the PCB!
 with BuildPart() as dc_jack_port:
-    with BuildSketch(floor_plane.offset(ups_pedestal_h)):
+    with BuildSketch(floor_plane.offset(ups_total_h)):
         with Locations((-47.5, jack_local_y)):
             Rectangle(25.0, 12.0)
     extrude(amount=16.0)
