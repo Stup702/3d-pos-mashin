@@ -723,6 +723,17 @@ if __name__ == "__main__":
     # ==========================================
     # 6. EXPORT STEP & STL
     # ==========================================
+    # Canonical filenames for final production printing:
+    export_step(case_top, "case_top.step")
+    export_step(case_bottom, "case_bottom.step")
+    export_step(button_plunger, "button_plunger.step")
+    export_step(button_keystone, "button_keystone.step")
+    export_stl(case_top, "case_top.stl", tolerance=0.02, angular_tolerance=0.1)
+    export_stl(case_bottom, "case_bottom.stl", tolerance=0.02, angular_tolerance=0.1)
+    export_stl(button_plunger, "button_plunger.stl", tolerance=0.02, angular_tolerance=0.1)
+    export_stl(button_keystone, "button_keystone.stl", tolerance=0.02, angular_tolerance=0.1)
+
+    # Secondary backwards-compatible filenames:
     export_step(case_top, "case_top_b123d.step")
     export_step(case_bottom, "case_bottom_b123d.step")
     export_step(button_plunger, "test_button_plunger.step")
@@ -731,7 +742,7 @@ if __name__ == "__main__":
     export_stl(case_bottom, "case_bottom_b123d.stl", tolerance=0.02, angular_tolerance=0.1)
     export_stl(button_plunger, "test_button_plunger.stl", tolerance=0.02, angular_tolerance=0.1)
     export_stl(button_keystone, "test_button_keystone.stl", tolerance=0.02, angular_tolerance=0.1)
-    print("Exported case_top, case_bottom, button_plunger, and button_keystone successfully to STEP and STL!")
+    print("Exported all final production and test STL and STEP models successfully!")
 
     # ==========================================
     # 7. STREAM TO OCP CAD VIEWER IN VS CODE
