@@ -36,8 +36,8 @@ The side profile is a wedge defined by the polygon:
 2. **UPS Module**:
    * $78.30\text{ mm} \times 55.50\text{ mm}$, centered at $(X = -5.05, Y = -16.00)$ on the slanted floor.
    * Toolless Locating Pole: $3.5\text{ mm}$ shoulder ($\varnothing 8.0\text{ mm}$) with a $4.0\text{ mm}$ tall locating pole ($\varnothing 3.70\text{ mm}$) fitting into the PCB's $4.0\text{ mm}$ hole and protruding $2.4\text{ mm}$ above the board for hot glue gun adhesion. No screws needed near delicate chips!
-   * DC barrel jack: Left wall port hole ($11\text{ mm}$ split across parting line) at $Y = -10.75\text{ mm}$.
-   * Cable pass-through notch: On fan-side rear wall at $X = +16.0\text{ mm}$, width $12.0\text{ mm}$, cut flush to the inner floor for female Dupont jumper wires.
+   * DC barrel jack: Left wall open U-port ($12.0\text{ mm}$ wide from PCB floor $Z = 14.0\text{ mm}$ up to $12\text{ mm}$ top arch) plus matching $12.0\text{ mm}$ cradle wall cutout at $Y = -10.75\text{ mm}$. Accommodates the $2.2\text{ mm}$ square body protrusion with zero clash.
+   * Dual cable pass-through notches: (1) On fan-side rear wall at $X = +21.0\text{ mm}$, width $22.0\text{ mm}$, cut flush to inner floor for female Dupont jumper wires; (2) On right wall (+X) at $Y = -2.0\text{ mm}$, width $14.0\text{ mm}$, cut flush to inner floor for side cable routing towards front corridor.
 3. **Cooling Fan (LD3007MS 30mm Pi-FAN)**:
    * $30\text{ mm} \times 30\text{ mm} \times 7\text{ mm}$, centered at $(X = 0, Y = +48.0\text{ mm})$.
    * Mounting pitch: $24.0\text{ mm} \times 24.0\text{ mm}$.

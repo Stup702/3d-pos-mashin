@@ -408,6 +408,14 @@ ups_boss_outer_d = 8.0
 ups_pin_d = 3.70 # Snug locating pole fitting inside the 4.0mm PCB hole
 ups_pin_h = 4.00 # 4.0mm pole height (protrudes 2.4mm above 1.6mm PCB for hot glue gun adhesion)
 
+# DC Barrel Jack Port Position on Left Wall (X = -50)
+# Measured: 18mm from fan/bat rear edge, 9mm width -> center Y = -10.75mm
+# Height: 3.5mm pedestal + 1.6mm PCB + 3.0mm bottom margin + 3.65/2 = 9.925mm above floor
+jack_rear_edge_y = ups_cy_local + (ups_l / 2.0) # +11.75 mm
+jack_local_y = jack_rear_edge_y - 18.0 - 4.5    # -10.75 mm
+jack_z = ups_pedestal_h + ups_pcb_t + 3.0 + 3.65 / 2.0 # 9.925 mm
+jack_world_pt = floor_plane.from_local_coords((ups_cx, jack_local_y, jack_z))
+
 with BuildPart() as ups_cradle:
     # A. Center Locating Pedestal & Pole (3.5mm shoulder + 1.5mm pole into PCB 4mm hole)
     # Completely eliminates screws and screwdrivers near delicate chips!
@@ -428,15 +436,32 @@ with BuildPart() as ups_cradle:
             Rectangle(ups_w + ups_tol, ups_l + ups_tol, mode=Mode.SUBTRACT)
     extrude(amount=ups_total_h)
 
-    # C. Cable Pass-Through Notch on Fan-Side Rear Wall (+Y)
-    # Allows jumper wires (female Dupont connectors) to pass through to fan corridor & RPi GPIO
-    # Centered at X = +16.0mm, width reduced to 12.0mm for a compact, neat pass-through
-    ups_notch_w = 12.0
-    ups_notch_cx = 16.0
+    # C. Dual Cable Pass-Through Notches (Rear +Y & Right +X Walls)
+    # 1. Fan-side rear wall (+Y) notch for jumper wires to fan & RPi GPIO:
+    ups_rear_notch_w = 22.0
+    ups_rear_notch_cx = 21.0
     ups_rear_wall_cy = ups_cy_local + (ups_l + ups_tol + ups_wall) / 2.0
     with BuildSketch(floor_plane.offset(-2.0)):
-        with Locations((ups_notch_cx, ups_rear_wall_cy)):
-            Rectangle(ups_notch_w, ups_wall * 4.0)
+        with Locations((ups_rear_notch_cx, ups_rear_wall_cy)):
+            Rectangle(ups_rear_notch_w, ups_wall * 4.0)
+    extrude(amount=ups_total_h + 4.0, mode=Mode.SUBTRACT)
+
+    # 2. Right-side wall (+X) notch for side cable routing towards front corridor & power switch:
+    ups_right_notch_w = 14.0
+    ups_right_notch_cy = -2.0
+    ups_right_wall_cx = ups_cx + (ups_w + ups_tol + ups_wall) / 2.0
+    with BuildSketch(floor_plane.offset(-2.0)):
+        with Locations((ups_right_wall_cx, ups_right_notch_cy)):
+            Rectangle(ups_wall * 4.0, ups_right_notch_w)
+    extrude(amount=ups_total_h + 4.0, mode=Mode.SUBTRACT)
+
+    # 3. Left-side wall (-X) notch for square DC barrel jack body (12mm wide, flush to floor):
+    # Allows the 2.2mm protruding square barrel jack to seat flush with zero clash!
+    ups_left_wall_cx = ups_cx - (ups_w + ups_tol + ups_wall) / 2.0
+    ups_jack_notch_w = 12.0
+    with BuildSketch(floor_plane.offset(-2.0)):
+        with Locations((ups_left_wall_cx, jack_local_y)):
+            Rectangle(ups_wall * 4.0, ups_jack_notch_w)
     extrude(amount=ups_total_h + 4.0, mode=Mode.SUBTRACT)
 
     # D. 4 Corner Support Pads (3.5mm tall) to keep PCB perfectly level
@@ -450,18 +475,15 @@ with BuildPart() as ups_cradle:
 
 case_bottom = case_bottom + ups_cradle.part
 
-# DC Barrel Jack Port Cutout on Left Wall (X = -50)
-# Measured: 18mm from fan/bat rear edge, 9mm width -> center Y = -10.75mm
-# Height: 3.5mm pedestal + 1.6mm PCB + 3.0mm bottom margin + 3.65/2 = 9.925mm above floor
-jack_rear_edge_y = ups_cy_local + (ups_l / 2.0) # +11.75 mm
-jack_local_y = jack_rear_edge_y - 18.0 - 4.5    # -10.75 mm
-jack_z = ups_pedestal_h + ups_pcb_t + 3.0 + 3.65 / 2.0 # 9.925 mm
-jack_world_pt = floor_plane.from_local_coords((ups_cx, jack_local_y, jack_z))
-
+# Open U-Port on Case Wall: 12mm width from PCB floor level (Z = 14.0mm) up to 12mm top arch
 with BuildPart() as dc_jack_port:
     with BuildSketch(Plane.YZ.offset(-55)):
+        # Lower U-body: from world Z = 14.0 (below PCB) up to jack center
+        with Locations((jack_world_pt.Y, (14.0 + jack_world_pt.Z) / 2.0)):
+            Rectangle(12.0, jack_world_pt.Z - 14.0)
+        # Upper arch (12mm diameter / 6mm radius)
         with Locations((jack_world_pt.Y, jack_world_pt.Z)):
-            Circle(radius=11.0 / 2) # 11mm clearance hole for DC barrel plug
+            Circle(radius=12.0 / 2.0)
     extrude(amount=20.0)
 case_bottom = case_bottom - dc_jack_port.part
 case_top = case_top - dc_jack_port.part
