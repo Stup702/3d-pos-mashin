@@ -27,6 +27,8 @@ balcony_t = screen_boss_h     # 5.0mm shelf thickness to fully sleeve the stando
 screen_boss_relief_clearance = 0.50 # 6.00mm sleeve hole diameter
 screen_screw_clear_d = 3.0   # M2.5 screw clearance
 corner_block_h = 4.5         # Solid bearing block for screw head
+screen_flange_t = 2.0        # Solid bearing flange thickness (gives 3.0mm thread engagement for 5mm screws)
+screen_cbore_d = 5.8         # Counterbore diameter for M2.5 screw head & driver clearance
 bracket_depth = 14.0         # Component clearance cavity
 
 # Profile Coordinates [Y, Z]
@@ -59,6 +61,7 @@ boss_locs = [
     (-42.0, 130.0),
     ( 42.0, 130.0)
 ]
+boss_r = 5.0  # Outer radius (ø10.0mm round cylindrical boss column)
 
 front_nut_drop = 5.0
 back_nut_drop  = 15.0
@@ -111,12 +114,15 @@ with BuildPart() as master:
     inner_cavity = extrude(amount=(enc_width - 2 * wall) / 2, both=True, mode=Mode.PRIVATE)
     master.part = master.part - inner_cavity
 
-    # E. Corner Screw Boss Pillars (12x10 solid columns, strictly trimmed inside outer skin)
+    # E. Corner Screw Boss Pillars (ø11.0mm cylindrical columns merged into outer wall)
     with BuildPart(mode=Mode.PRIVATE) as pillar_builder:
         for bx, by in boss_locs:
             with BuildSketch(Plane.XY.offset(100)):
                 with Locations((bx, by)):
-                    Rectangle(12, 10)
+                    Circle(radius=boss_r)
+                    x_sign = 1.0 if bx > 0 else -1.0
+                    with Locations((x_sign * (boss_r / 2), 0)):
+                        Rectangle(boss_r, boss_r * 2)
             extrude(amount=-150)
     contained_pillars = pillar_builder.part & outer_solid_boundary
     master.part = master.part + contained_pillars
@@ -153,18 +159,27 @@ with BuildPart() as master:
         Rectangle(screen_w - 18, screen_l - 18)
     extrude(amount=bracket_depth / 2, both=True, mode=Mode.SUBTRACT)
 
-    # Boss Sleeves & M2.5 Screw Holes
+    # Boss Sleeves, M2.5 Screw Holes & Counterbores (for 5.0mm M2.5 screws)
+    cb_shelf_offset = -screen_t - balcony_t - screen_flange_t  # -14.80 mm
     for hx in [-screen_hole_x_spacing / 2, screen_hole_x_spacing / 2]:
         for hy in [-screen_hole_y_spacing / 2, screen_hole_y_spacing / 2]:
-            with BuildSketch(screen_plane.offset(-screen_t - balcony_t / 2)):
+            # 1. Factory Brass Standoff Sleeve (stops strictly at -12.8mm, no overcut into corner block)
+            with BuildSketch(screen_plane.offset(-screen_t - balcony_t)):
                 with Locations((hx, hy)):
                     Circle(radius=(screen_boss_d + screen_boss_relief_clearance) / 2)
-            extrude(amount=(balcony_t + 2) / 2, both=True, mode=Mode.SUBTRACT)
-            
-            with BuildSketch(screen_plane.offset(-20)):
+            extrude(amount=balcony_t + 1.0, mode=Mode.SUBTRACT)
+
+            # 2. M2.5 Clearance Through-Hole (diameter 3.0mm, passes through 2.0mm solid flange)
+            with BuildSketch(screen_plane.offset(-20.0)):
                 with Locations((hx, hy)):
                     Circle(radius=screen_screw_clear_d / 2)
-            extrude(amount=20, both=True, mode=Mode.SUBTRACT)
+            extrude(amount=20.0, both=True, mode=Mode.SUBTRACT)
+
+            # 3. Screw Head Counterbore (diameter 5.8mm, cuts from -14.8mm into case interior)
+            with BuildSketch(screen_plane.offset(cb_shelf_offset)):
+                with Locations((hx, hy)):
+                    Circle(radius=screen_cbore_d / 2)
+            extrude(amount=-10.0, mode=Mode.SUBTRACT)
 
     # DSI Ribbon Cable Pass-Through Notch on Front Chin Balcony (-Y)
     # Allows 15-pin FPC cable from screen DSI connector to pass through balcony
@@ -178,7 +193,7 @@ with BuildPart() as master:
 master_shell_part = master.part
 
 # ==========================================
-# 2. CUTTER FOR CLAMSHELL SPLIT
+# 2. CUTTER FOR CLAMSHELL SPLIT (WITH LEVEL HORIZONTAL BOSS MATING FACES)
 # ==========================================
 # Entire rear back panel (Y >= 140) belongs to the bottom tub!
 with BuildPart() as split_cutter:
@@ -193,6 +208,27 @@ with BuildPart() as split_cutter:
             (-200.0,  get_seam_z(-200.0))
         ])
     extrude(amount=enc_width + 50, both=True)
+
+    # Level Horizontal Flat Steps at All 4 Screw Bosses:
+    # Forces boss mating faces to be 100% horizontal (Plane.XY, perpendicular to Z)
+    # Allows heat-set inserts to press straight down vertically into a dead flat face.
+    for bx, by in boss_locs:
+        z_flat = get_seam_z(by)
+        with BuildSketch(Plane.XY.offset(z_flat)):
+            with Locations((bx, by)):
+                Circle(radius=boss_r + 0.5)
+                x_sign = 1.0 if bx > 0 else -1.0
+                with Locations((x_sign * (boss_r / 2 + 1.0), 0)):
+                    Rectangle(boss_r + 2.0, boss_r * 2 + 2.0)
+        extrude(amount=100.0, mode=Mode.SUBTRACT)
+
+        with BuildSketch(Plane.XY.offset(z_flat)):
+            with Locations((bx, by)):
+                Circle(radius=boss_r + 0.5)
+                x_sign = 1.0 if bx > 0 else -1.0
+                with Locations((x_sign * (boss_r / 2 + 1.0), 0)):
+                    Rectangle(boss_r + 2.0, boss_r * 2 + 2.0)
+        extrude(amount=-100.0, mode=Mode.ADD)
 
 bottom_mask_solid = split_cutter.part
 
@@ -224,19 +260,19 @@ with BuildPart() as pos_lip:
     # Suppress around boss pillars and rear slope
     with BuildPart() as masks:
         for bx, by in boss_locs:
-            with BuildSketch(Plane.XY.offset(50)):
+            with BuildSketch(Plane.XY.offset(100)):
                 with Locations((bx, by)):
                     Rectangle(25, 25)
-            extrude(amount=-100)
-        with BuildSketch(Plane.XY.offset(50)):
+            extrude(amount=-150)
+        with BuildSketch(Plane.XY.offset(100)):
             with Locations((0, 170)):
                 Rectangle(enc_width + 10, 50)
-        extrude(amount=-100)
+        extrude(amount=-150)
         # Suppress lip joint at power button slot (Right wall, Y = 32.0, X = 50.0)
-        with BuildSketch(Plane.XY.offset(50)):
+        with BuildSketch(Plane.XY.offset(100)):
             with Locations((48.0, 32.0)):
                 Rectangle(15.0, 20.0)
-        extrude(amount=-100)
+        extrude(amount=-150)
         
     lip_positive = lip_positive - masks.part
 
@@ -264,19 +300,19 @@ with BuildPart() as neg_lip:
     
     with BuildPart() as masks:
         for bx, by in boss_locs:
-            with BuildSketch(Plane.XY.offset(50)):
+            with BuildSketch(Plane.XY.offset(100)):
                 with Locations((bx, by)):
                     Rectangle(25, 25)
-            extrude(amount=-100)
-        with BuildSketch(Plane.XY.offset(50)):
+            extrude(amount=-150)
+        with BuildSketch(Plane.XY.offset(100)):
             with Locations((0, 170)):
                 Rectangle(enc_width + 10, 50)
-        extrude(amount=-100)
+        extrude(amount=-150)
         # Suppress lip joint at power button slot (Right wall, Y = 32.0, X = 50.0)
-        with BuildSketch(Plane.XY.offset(50)):
+        with BuildSketch(Plane.XY.offset(100)):
             with Locations((48.0, 32.0)):
                 Rectangle(15.0, 20.0)
-        extrude(amount=-100)
+        extrude(amount=-150)
         
     lip_negative = lip_negative - masks.part
 
@@ -319,22 +355,22 @@ def build_pn532_slider():
 case_top = (master_shell_part - bottom_mask_solid) - lip_negative_solid
 
 # Blind Heat-Set Insert Holes in Top Lid (M3 x 4mm insert: hole diameter 3.8mm, depth 6.5mm)
-# Starts 3.0mm below z_cut to penetrate the full sloped boss face -> 100% round circular hole!
-insert_hole_d = 3.8 # Sized smaller than M3 brass insert knurl OD (4.2mm) for strong plastic grip
-insert_chamfer_d = 4.1
+# Drilled vertically upwards into the 100% flat horizontal boss face
+insert_hole_d = 3.8    # Sized for standard M3 brass heat-set insert (4.2mm knurl OD)
+insert_chamfer_d = 4.1 # 45 deg self-centering lead chamfer
 with BuildPart() as insert_holes:
     for bx, by in boss_locs:
-        z_cut = get_seam_z(by)
-        # Blind cylindrical hole drilled UPWARDS from below the parting seam into the boss
-        with BuildSketch(Plane.XY.offset(z_cut - 3.0)):
+        z_flat = get_seam_z(by)
+        # Main insert blind hole: 6.5mm deep into the horizontal boss face
+        with BuildSketch(Plane.XY.offset(z_flat - 1.0)):
             with Locations((bx, by)):
                 Circle(radius=insert_hole_d / 2)
-        extrude(amount=9.6)
-        # 45 deg lead-in chamfer for easy alignment when pressing with soldering iron
-        with BuildSketch(Plane.XY.offset(z_cut - 3.0)):
+        extrude(amount=7.5)
+        # 45 deg lead-in chamfer for perfect vertical alignment when pressing with soldering iron
+        with BuildSketch(Plane.XY.offset(z_flat - 1.0)):
             with Locations((bx, by)):
                 Circle(radius=insert_chamfer_d / 2)
-        extrude(amount=3.6)
+        extrude(amount=1.6)
 case_top = case_top - insert_holes.part
 
 # Bottom Tub
@@ -359,16 +395,16 @@ case_bottom = case_bottom + slider_located
 # Bottom-Entry Screwholes (screws inserted from desk base underneath)
 with BuildPart() as bottom_screw_holes:
     for bx, by in boss_locs:
-        z_cut = get_seam_z(by)
-        # M3 screw clearance hole (3.4mm diameter) all the way through to parting seam
+        z_flat = get_seam_z(by)
+        # M3 screw clearance hole (3.4mm diameter) all the way through to the flat parting face
         with BuildSketch(Plane.XY.offset(-1)):
             with Locations((bx, by)):
                 Circle(radius=3.4 / 2)
-        extrude(amount=z_cut + 5)
+        extrude(amount=z_flat + 5)
         
         # Recessed counterbore from the desk base (Z = 0)
-        # Front: 3.5mm deep (flange = 11.7mm, M3x16 reaches 4.3mm into insert)
-        # Back: 50.5mm deep (flange = 11.9mm, M3x16 reaches 4.1mm into insert)
+        # Front: 3.5mm deep (flange = 11.74mm, M3x16 reaches 4.26mm into insert)
+        # Back: 50.5mm deep (flange = 11.88mm, M3x16 reaches 4.12mm into insert)
         cb_depth = 50.5 if by > 50 else 3.5
         with BuildSketch(Plane.XY.offset(-1)):
             with Locations((bx, by)):
@@ -438,6 +474,13 @@ jack_local_y = jack_rear_edge_y - 18.0 - 4.5    # -10.75 mm
 jack_z = ups_pedestal_h + ups_pcb_t + 3.0 + 3.65 / 2.0 # 9.925 mm
 jack_world_pt = floor_plane.from_local_coords((ups_cx, jack_local_y, jack_z))
 
+# DC Barrel Jack Wall Port & Cradle Notch Dimensions:
+# Rear edge locked at -4.75mm; front wall lengthened by 1.0mm (moves front edge from -16.75mm to -15.75mm)
+# Cutout height dropped by 3.5mm (from 16.0mm to 12.5mm, ceiling drops to Z_floor = 17.6mm)
+dc_port_w_y = 11.0       # 11.0mm width along Y (reduced from 12.0mm)
+dc_port_cy = -10.25      # Center shifted +0.5mm towards rear: Y in [-15.75, -4.75] mm
+dc_port_h = 12.5         # Height along floor normal (reduced from 16.0mm by 3.5mm)
+
 with BuildPart() as ups_cradle:
     # A. Center Locating Pedestal & Pole (3.5mm shoulder + 4.0mm pole into PCB 4mm hole)
     # Completely eliminates screws and screwdrivers near delicate chips!
@@ -481,10 +524,9 @@ with BuildPart() as ups_cradle:
     # Starts at ups_total_h (5.1mm) to match the UPS perimeter wall height and PCB top surface!
     # Conceals the 1.6mm raw PCB edge and blocks the view underneath the PCB completely.
     ups_left_wall_cx = ups_cx - (ups_pocket_w + ups_wall) / 2.0
-    ups_jack_notch_w = 12.0
     with BuildSketch(floor_plane.offset(ups_total_h)):
-        with Locations((ups_left_wall_cx, jack_local_y)):
-            Rectangle(ups_wall * 4.0, ups_jack_notch_w)
+        with Locations((ups_left_wall_cx, dc_port_cy)):
+            Rectangle(ups_wall * 4.0, dc_port_w_y)
     extrude(amount=ups_total_h + 4.0, mode=Mode.SUBTRACT)
 
     # E. 3 Corner Support Pads (3.5mm tall) to keep PCB perfectly level
@@ -509,9 +551,9 @@ case_bottom = case_bottom + ups_cradle.part
 # is retained at the outer wall, flush with the UPS perimeter walls and top of the PCB!
 with BuildPart() as dc_jack_port:
     with BuildSketch(floor_plane.offset(ups_total_h)):
-        with Locations((-47.5, jack_local_y)):
-            Rectangle(25.0, 12.0)
-    extrude(amount=16.0)
+        with Locations((-47.5, dc_port_cy)):
+            Rectangle(25.0, dc_port_w_y)
+    extrude(amount=dc_port_h)
 case_bottom = case_bottom - dc_jack_port.part
 case_top = case_top - dc_jack_port.part
 
