@@ -299,24 +299,29 @@ lip_negative_solid = lip_negative
 # ==========================================
 # 4. PN532 SLIDER MODULE
 # ==========================================
-def build_pn532_slider():
+def build_pn532_slider(h=38.0):
     w = 41.5
-    h = 42.8
     d = 3.3
     t = 2.0
     lip = 1.5
+    back_t = 1.5
     with BuildPart() as slider:
+        # 1. Solid back plate to form a rigid partition wall behind battery cradle
         with BuildSketch():
-            # Rails & Bottom Stopper
+            with Locations((0, -t/2)):
+                Rectangle(w + 2 * t, h + t)
+        extrude(amount=back_t)
+        # 2. Rails & Bottom Stopper
+        with BuildSketch(Plane.XY.offset(back_t)):
             with Locations((-(w/2 + t/2), -t/2)):
                 Rectangle(t, h + t)
             with Locations(((w/2 + t/2), -t/2)):
                 Rectangle(t, h + t)
             with Locations((0, -(h/2 + t/2))):
                 Rectangle(w + t*2, t)
-        extrude(amount=d + t)
-        # Retaining lips
-        with BuildSketch(Plane.XY.offset(d)):
+        extrude(amount=d)
+        # 3. Retaining lips
+        with BuildSketch(Plane.XY.offset(back_t + d)):
             with Locations((-(w/2 - lip/2), -t/2)):
                 Rectangle(lip, h + t)
             with Locations(((w/2 - lip/2), -t/2)):
@@ -603,13 +608,14 @@ with BuildPart() as bat_cradle:
     extrude(amount=bat_h)
 
     # Attach PN532 NFC Slider to the REAR FACE of the battery cradle rear wall
-    # Facing backwards towards the rear sloped panel through a ~15-20mm air gap!
+    # Facing backwards towards the rear sloped panel through a ~12-16mm air gap!
     # Tapping an NFC card directly against the exterior shell puts it right in the sweet spot!
     bat_rear_local_y = bat_cy_local + (bat_l + bat_tol) / 2.0 + bat_wall
-    slider_raw = build_pn532_slider()
+    slider_raw = build_pn532_slider(h=38.0)
     slider_rot = slider_raw.moved(Location((0, 0, 0), (0, 1, 1), 180))
-    # Bottom stopper at floor (Z=0), open top pointing upwards (+Z)
-    slider_positioned = slider_rot.moved(Location((0, bat_rear_local_y, 23.4)))
+    # Bottom stopper rests flush at local Z=0 (inner floor), open top pointing upwards (+Z)
+    slider_local = slider_rot.moved(Location((0, bat_rear_local_y, 21.0)))
+    slider_positioned = slider_local.moved(floor_plane.location)
     add(slider_positioned)
 
 case_bottom = case_bottom + bat_cradle.part
