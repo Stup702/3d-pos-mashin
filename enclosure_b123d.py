@@ -390,14 +390,21 @@ case_top = case_top - insert_holes.part
 # ==========================================
 # 4B. ACER-STYLE STAGGERED LABYRINTH AIR VENT (CASE TOP LEFT WALL)
 # ==========================================
-# Spans Y in [40.0, 75.0] mm, directly flanking the 30mm cooling fan and RPi 4 CPU.
-# Dual-staggered slat rows (1.4mm outer slats, 1.2mm plenum corridor, 1.4mm inner slats)
-# provide 100% normal line-of-sight optical occlusion while maintaining high airflow throughput.
-vent_start_y = 40.0
-vent_end_y = 75.0
-vent_len = vent_end_y - vent_start_y  # 35.0 mm
-vent_h = 14.0                         # 14.0 mm window height
-sill_clear = 4.0                      # 4.0 mm above parting seam (preserves 1.70mm solid bridge over lip joint)
+# Reinforced configuration:
+# - Spans Y in [41.0, 67.0] mm (length 26.0 mm, 6 outer slots / 5 inner slots),
+#   dead-center over the 30mm cooling fan (Y in [33, 63]) and RPi 4 CPU (Y ~ 55).
+# - sill_clear = 6.0 mm: elevates vent sill 6.0 mm above parting seam, leaving a thick
+#   3.70 mm solid bridge (+118% more plastic) over the 2.30 mm lap joint groove,
+#   providing 10.3x higher bending stiffness and a 4.0 mm clearance to the bottom lip.
+# - vent_h = 12.0 mm: preserves identical Z_seam + 18.0 mm top elevation and a solid
+#   5.4 - 6.0 mm upper lintel beneath the sloped roof face.
+# - Dual-staggered slat rows (1.4mm outer slats, 1.2mm plenum corridor, 1.4mm inner slats)
+#   provide 100% normal line-of-sight optical occlusion.
+vent_start_y = 41.0
+vent_end_y = 67.0
+vent_len = vent_end_y - vent_start_y  # 26.0 mm
+vent_h = 12.0                         # 12.0 mm window height
+sill_clear = 6.0                      # 6.0 mm above parting seam (preserves 3.70mm solid bridge over lip joint)
 pitch = 4.0                           # 4.0 mm pitch (2.4mm slat, 1.6mm gap)
 w_slat = 2.4
 w_gap = 1.6
@@ -409,7 +416,7 @@ vent_plane = Plane(
 )
 
 with BuildPart() as acer_vent_cutter:
-    num_slots = 8
+    num_slots = 6
     # 1. Outer slot row: 1.4mm thick outer shell (overshoot -0.5 to +1.4)
     for i in range(num_slots):
         slot_cy = (i + 0.5) * pitch + 1.0
@@ -421,7 +428,7 @@ with BuildPart() as acer_vent_cutter:
     # 2. Central plenum corridor: 1.2mm deep airway chamber connecting outer and inner slots
     with BuildSketch(vent_plane.offset(1.4)):
         with Locations((vent_len / 2.0, vent_h / 2.0)):
-            Rectangle(vent_len - 1.0, vent_h)
+            Rectangle(vent_len - 2.0, vent_h)
     extrude(amount=1.2)
 
     # 3. Inner slot row: 1.4mm thick inner shell (overshoot +2.6 to +4.5)

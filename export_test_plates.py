@@ -138,8 +138,8 @@ def make_battery_indicator_test_plate() -> Compound:
 def make_acer_vent_test_plate() -> Compound:
     """Direct slice of case_top around the left-wall Acer-style staggered labyrinth air vent."""
     with BuildPart() as vent_cutter:
-        with Locations((-45.0, 57.5, 55.0)):
-            Box(25.0, 50.0, 35.0)
+        with Locations((-45.0, 54.0, 50.0)):
+            Box(25.0, 42.0, 32.0)
     vent_cutout = case_top & vent_cutter.part
     bb = vent_cutout.bounding_box()
     return vent_cutout.moved(Location((-bb.center().X, -bb.center().Y, -bb.min.Z)))
