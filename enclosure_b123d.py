@@ -37,7 +37,7 @@ p2 = (-70.0, 34.0)
 p3 = (140.0, 89.0)     
 p5 = (180.0, 0.0)      
 p6 = (160.0, 0.0)      
-p7 = (140.0, 30.0)
+p7 = (144.5, (144.5 + 70.0) / 7.0) # (144.5, 30.642857) Extended rearward by 4.5mm to fully enclose rear screw counterbore on underbelly
 
 # Sloped Face Geometry
 dy = p3[0] - p2[0]  # 210.0
@@ -408,8 +408,10 @@ with BuildPart() as bottom_screw_holes:
         # Back: 21.8mm deep counterbore (leaves 11.89mm flange, M3x16 reaches 4.11mm into insert)
         cb_len = 21.8 if by > 50 else 1.5
         cb_dist = 33.69 if by > 50 else 12.34
-        with Locations(loc * Location((0, 0, -cb_dist + cb_len / 2.0 - 0.1))):
-            Cylinder(radius=6.5 / 2.0, height=cb_len + 0.2)
+        # Add 4.0mm downward overshoot into open air below the underbelly to eliminate any partial coplanar wafer or Z-fighting
+        cb_overshoot = 4.0
+        with Locations(loc * Location((0, 0, -cb_dist + (cb_len + cb_overshoot) / 2.0 - cb_overshoot))):
+            Cylinder(radius=6.5 / 2.0, height=cb_len + cb_overshoot)
 case_bottom = case_bottom - bottom_screw_holes.part
 
 # ==========================================
