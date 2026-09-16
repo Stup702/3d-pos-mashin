@@ -767,65 +767,66 @@ case_bottom = (case_bottom + button_cradle_boss) - button_cradle_cutters.part
 # ==========================================
 # 5D. BATTERY INDICATOR VIEWING SLIT & SLIDE-IN CRADLE (RIGHT WALL)
 # ==========================================
-# Daughterboard: 4 SMD LEDs, total length 9.2mm. Solder pads at rear foot (+Y end).
-# An internal C-channel box on the inner right wall (X = 46.5mm) with its rear (+Y) side open.
-# The board slides horizontally from the rear (+Y) towards the front (-Y) end stop,
-# while the wires exit cleanly into the case interior.
-# The 3.5mm outer wall remains 100% full thickness (zero wall thinning), with a
-# 10.0mm x 1.4mm viewing slit pierced through to illuminate the 4 LEDs.
+# Daughterboard specs: 4 SMD LEDs, total length 9.2mm, width 6.5-7.0mm, thickness 2.0mm.
+# An internal full solid box on the inner right wall (X = 46.0mm) with its FRONT (chin side, -Y)
+# wide open so the board slides in from the front towards the rear stop (button side, +Y),
+# while the wires exit directly towards the front chin / UPS board.
+# The 4.0mm outer wall remains 100% full thickness (zero wall thinning), with a
+# sleek 8.5mm x 0.8mm micro-slit pierced through to illuminate the 4 LEDs.
 
-batt_led_y = 17.0        # Center Y (spans Y in [12.0, 22.0], 3mm clear of button cradle at Y=25.0)
-batt_led_z = 28.0        # Center Z (aligned with power button center Z=28.0)
-batt_slit_l = 10.0       # Slit length along Y (covers 9.2mm board + 0.4mm margins)
-batt_slit_h = 1.4        # Slit height along Z (7 layers of 0.2mm, clean open-air bridge)
+batt_wall_inner_x = enc_width / 2.0 - wall # 46.0mm
 
-# Board placeholder dimensions:
-batt_board_l = 9.2       # Board length along Y
-batt_board_w = 6.0       # Board width / height along Z (placeholder: 6.0mm / 0.6cm)
-batt_slot_t = 1.4        # Slot depth along X (for board + SMD LED components + clearance)
+# Pocket dimensions (generous clearance so 2.0mm thick, 6.5-7.0mm wide board slides in smoothly):
+batt_slot_t = 2.2        # Internal slot depth along X (for 2.0mm board + clearance)
+batt_slot_w = 7.0        # Internal slot height along Z (for 0.6~0.7cm board + clearance)
+batt_slot_l = 10.0       # Internal slot length along Y (for 9.2mm board + clearance)
+cradle_wall_t = 1.0      # 1.0mm solid enclosure wall
 
-# 1. Through-wall viewing slit with rounded corners (R=0.4mm)
+cradle_depth = batt_slot_t + cradle_wall_t   # 3.2mm protrusion into case cavity
+cradle_h = batt_slot_w + 2 * cradle_wall_t   # 9.0mm total height along Z
+cradle_l = batt_slot_l + cradle_wall_t       # 11.0mm total box length along Y
+
+batt_led_z = 28.0        # Centerline height along Z (matches power button center)
+
+# Along Y: Rear solid stop (+Y) at Y = 21.0mm (box ends at Y = 22.0mm, 3.0mm clear of button cradle at Y=25.0)
+cradle_rear_y = 22.0
+cradle_front_y = cradle_rear_y - cradle_l    # 11.0mm (wide open entrance on chin side)
+cradle_center_y = (cradle_rear_y + cradle_front_y) / 2.0 # 16.5mm
+
+# Viewing micro-slit (8.5mm x 0.8mm, centered on the 9.2mm board at Y = 16.4mm)
+batt_slit_y = 16.4
+batt_slit_l = 8.5
+batt_slit_h = 0.8
+
+# 1. Through-wall viewing micro-slit with rounded corners (R=0.35mm)
 with BuildPart() as batt_slit_cutter:
     with BuildSketch(Plane.YZ.offset(48.5)):
-        with Locations((batt_led_y, batt_led_z)):
-            RectangleRounded(batt_slit_l, batt_slit_h, radius=0.4)
+        with Locations((batt_slit_y, batt_led_z)):
+            RectangleRounded(batt_slit_l, batt_slit_h, radius=0.35)
     extrude(amount=4.0, both=True)
 
-# 2. Internal Slide-in C-Channel Cradle (Additive box on inner wall at X = 46.5)
-cradle_lip_t = 1.0       # Retaining lip thickness
-cradle_protrusion = batt_slot_t + cradle_lip_t  # 2.4mm protrusion into cavity
-cradle_outer_x = 46.5 - cradle_protrusion / 2   # Center X of cradle box
-
-cradle_l = batt_board_l + 1.2 # 10.4mm total cradle body length along Y
-cradle_h = batt_board_w + 2 * cradle_lip_t      # 8.0mm total height along Z
-
+# 2. Internal Full Solid Slide-in Box (Attached to inner wall at X = 46.0)
+# OPEN on chin side (-Y), CLOSED on button side (+Y). Back face is 100% solid.
 with BuildPart() as batt_cradle_raw:
-    # Outer solid sleeve box fused to inner wall
-    with Locations((cradle_outer_x, batt_led_y, batt_led_z)):
-        Box(cradle_protrusion, cradle_l, cradle_h)
+    # A. Solid outer box fused to inner wall
+    with Locations((batt_wall_inner_x - cradle_depth / 2.0, cradle_center_y, batt_led_z)):
+        Box(cradle_depth, cradle_l, cradle_h)
     
-    # Internal slide channel (open on +Y rear end, closed front end stop at -Y)
-    slot_l = cradle_l + 4.0
-    slot_cx = (batt_led_y - cradle_l / 2 + 0.8) + slot_l / 2
-    with Locations((46.5 - batt_slot_t / 2, slot_cx, batt_led_z)):
-        Box(batt_slot_t, slot_l, batt_board_w, mode=Mode.SUBTRACT)
-    
-    # Center open window on inside face so wires / board back can breathe
-    with Locations((46.5 - cradle_protrusion, batt_led_y, batt_led_z)):
-        Box(2.0, batt_board_l, batt_board_w - 1.6, mode=Mode.SUBTRACT)
+    # B. Internal slide channel: OPEN on chin side (-Y), CLOSED on button side (+Y stop at 21.0mm)
+    slot_cutter_len = batt_slot_l + 6.0
+    slot_cutter_cy = 21.0 - slot_cutter_len / 2.0
+    with Locations((batt_wall_inner_x - batt_slot_t / 2.0, slot_cutter_cy, batt_led_z)):
+        Box(batt_slot_t, slot_cutter_len, batt_slot_w, mode=Mode.SUBTRACT)
 
-# 3. 45-degree self-supporting triangular print gusset underneath the cradle
-shelf_bot_z = batt_led_z - cradle_h / 2
-with BuildPart() as batt_gusset:
-    with BuildSketch(Plane.XZ.offset(batt_led_y)):
-        Polygon([
-            (46.5 - cradle_protrusion, shelf_bot_z),
-            (46.5, shelf_bot_z),
-            (46.5, shelf_bot_z - cradle_protrusion)
-        ])
-    extrude(amount=cradle_l / 2, both=True)
+# 3. 45-degree self-supporting chamfer on bottom-inner edge for 100% support-free FDM printing
+b_edge = batt_cradle_raw.part.edges().filter_by_position(
+    Axis.X, batt_wall_inner_x - cradle_depth - 0.1, batt_wall_inner_x - cradle_depth + 0.1
+).filter_by_position(
+    Axis.Z, batt_led_z - cradle_h / 2.0 - 0.1, batt_led_z - cradle_h / 2.0 + 0.1
+)
+cradle_chamfered = chamfer(b_edge, length=1.5) if b_edge else batt_cradle_raw.part
 
-batt_addition = (batt_cradle_raw.part + batt_gusset.part) & bottom_mask_solid
+batt_addition = cradle_chamfered & bottom_mask_solid
 case_bottom = (case_bottom - batt_slit_cutter.part) + batt_addition
 
 print("Case Top Volume:", case_top.volume)

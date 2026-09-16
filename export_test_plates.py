@@ -129,8 +129,8 @@ def make_heat_insert_test_plate() -> Compound:
 def make_battery_indicator_test_plate() -> Compound:
     """Direct slice of case_bottom around the right-wall battery indicator slit and slide-in cradle."""
     with BuildPart() as batt_cutter:
-        with Locations((50.0 - 8.0, 17.0, 25.0)):
-            Box(22.0, 22.0, 30.0)
+        with Locations((50.0 - 8.0, 16.5, 25.0)):
+            Box(22.0, 24.0, 30.0)
     batt_cutout = case_bottom & batt_cutter.part
     bb = batt_cutout.bounding_box()
     return batt_cutout.moved(Location((-bb.center().X, -bb.center().Y, -bb.min.Z)))
