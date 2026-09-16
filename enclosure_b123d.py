@@ -364,20 +364,27 @@ def build_pn532_slider():
 # Top Lid (Clean, seamless faceplate with zero screw holes)
 case_top = (master_shell_part - bottom_mask_solid) - lip_negative_solid
 
-# Blind Heat-Set Insert Holes in Top Lid (M3 x 4mm insert: hole diameter 3.8mm, depth 6.5mm)
+# Blind Heat-Set Insert Holes in Top Lid with Melt Reservoir & Anti-Burr Micro-Chamfer
 # Drilled along the screen-normal vector (100% vertical when case_top is lying face-down on workbench)
-insert_hole_d = 3.8    # Sized for standard M3 brass heat-set insert (4.2mm knurl OD)
-insert_chamfer_d = 4.1 # 45 deg self-centering lead chamfer
+# Sized specifically for M3 inserts with 4.6mm outer whirl knurl:
+# 1. Main Bore: straight ø4.0mm (smooth ø3.95mm nose seats cold, acting as shield against thread clogging)
+# 2. Melt Reservoir: 8.5mm total depth (leaves 3mm+ empty relief chamber beneath insert)
+# 3. Micro-Chamfer: ø4.8mm x 45 deg (0.4mm deep) to prevent surface mushrooming/burrs
+insert_hole_d = 4.0        # Straight ø4.0mm bore (Ruthex/CNC Kitchen standard for 4.6mm knurl)
+insert_hole_depth = 8.5    # 8.5mm total depth (provides 3mm+ melt reservoir beneath insert)
+insert_chamfer_d = 4.8     # 45 deg micro-chamfer at mouth (stops surface burrs / mushrooming)
+insert_chamfer_depth = 0.4 # 0.4mm depth for 45 deg transition: (4.8 - 4.0) / 2 = 0.4mm
+
 with BuildPart() as insert_holes:
     for bx, by in boss_locs:
         z_seam = get_seam_z(by)
         loc = Location((bx, by, z_seam), (math.degrees(face_angle), 0, 0))
-        # Main hole: 6.5mm deep into the boss along the pillar axis (+Z in rotated frame)
-        with Locations(loc * Location((0, 0, 6.5 / 2.0))):
-            Cylinder(radius=insert_hole_d / 2.0, height=6.5)
-        # 45 deg lead-in chamfer for perfect vertical alignment when pressing with soldering iron
-        with Locations(loc * Location((0, 0, 0.6 / 2.0))):
-            Cylinder(radius=insert_chamfer_d / 2.0, height=0.6)
+        # 1. Main straight bore + melt reservoir (8.5mm deep into the boss along pillar axis)
+        with Locations(loc * Location((0, 0, insert_hole_depth / 2.0))):
+            Cylinder(radius=insert_hole_d / 2.0, height=insert_hole_depth)
+        # 2. 45 deg anti-burr micro-chamfer at the opening mouth
+        with Locations(loc * Location((0, 0, insert_chamfer_depth / 2.0))):
+            Cone(bottom_radius=insert_chamfer_d / 2.0, top_radius=insert_hole_d / 2.0, height=insert_chamfer_depth)
 case_top = case_top - insert_holes.part
 
 # Bottom Tub

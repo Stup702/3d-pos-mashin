@@ -113,6 +113,19 @@ def make_nfc_test_plate() -> Compound:
     bb = nfc_cutout.bounding_box()
     return nfc_cutout.moved(Location((-bb.center().X, -bb.center().Y, -bb.min.Z)))
 
+def make_heat_insert_test_plate() -> Compound:
+    """Direct slice of case_top around a corner screw boss (heat-set insert test).
+    Oriented flat on bed at Z=0 with insert hole pointing straight up for a fast test print."""
+    loc_screen = screen_plane.location
+    with BuildPart() as insert_cutter:
+        with BuildSketch(screen_plane):
+            with Locations((42.0, -119.791)):
+                Rectangle(20.0, 20.0)
+        extrude(amount=-26.0)
+    insert_cutout = (case_top & insert_cutter.part).moved(loc_screen.inverse()).rotate(Axis.X, 180)
+    bb = insert_cutout.bounding_box()
+    return insert_cutout.moved(Location((-bb.center().X, -bb.center().Y, -bb.min.Z)))
+
 if __name__ == "__main__":
     print("Generating rapid test-print gauge plates (Direct Enclosure Slice)...")
     scr_plate = make_screen_test_plate()
@@ -121,6 +134,7 @@ if __name__ == "__main__":
     fan_plate = make_fan_test_plate()
     btn_plate = make_button_test_plate()
     nfc_plate = make_nfc_test_plate()
+    insert_plate = make_heat_insert_test_plate()
 
     export_stl(scr_plate, os.path.join(OUTPUT_DIR, "test_plate_screen.stl"), tolerance=0.05, angular_tolerance=0.2)
     export_stl(ups_plate, os.path.join(OUTPUT_DIR, "test_plate_ups.stl"), tolerance=0.05, angular_tolerance=0.2)
@@ -128,7 +142,9 @@ if __name__ == "__main__":
     export_stl(fan_plate, os.path.join(OUTPUT_DIR, "test_plate_fan.stl"), tolerance=0.05, angular_tolerance=0.2)
     export_stl(btn_plate, os.path.join(OUTPUT_DIR, "test_plate_button.stl"), tolerance=0.05, angular_tolerance=0.2)
     export_stl(nfc_plate, os.path.join(OUTPUT_DIR, "test_plate_nfc.stl"), tolerance=0.05, angular_tolerance=0.2)
+    export_stl(insert_plate, os.path.join(OUTPUT_DIR, "test_plate_heat_insert.stl"), tolerance=0.02, angular_tolerance=0.1)
     export_step(nfc_plate, os.path.join(OUTPUT_DIR, "test_plate_nfc.step"))
+    export_step(insert_plate, os.path.join(OUTPUT_DIR, "test_plate_heat_insert.step"))
     export_stl(button_plunger, os.path.join(OUTPUT_DIR, "test_button_plunger.stl"), tolerance=0.02, angular_tolerance=0.1)
     export_stl(button_keystone, os.path.join(OUTPUT_DIR, "test_button_keystone.stl"), tolerance=0.02, angular_tolerance=0.1)
 
@@ -139,5 +155,7 @@ if __name__ == "__main__":
     print("  4. test_plate_fan.stl")
     print("  5. test_plate_button.stl")
     print("  6. test_plate_nfc.stl")
-    print("  7. test_button_plunger.stl")
-    print("  8. test_button_keystone.stl")
+    print("  7. test_plate_heat_insert.stl")
+    print("  8. test_button_plunger.stl")
+    print("  9. test_button_keystone.stl")
+
