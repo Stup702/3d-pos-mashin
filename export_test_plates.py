@@ -104,6 +104,15 @@ def make_button_test_plate() -> Compound:
     bb = btn_cutout.bounding_box()
     return btn_cutout.moved(Location((-bb.center().X, -bb.center().Y, -bb.min.Z)))
 
+def make_nfc_test_plate() -> Compound:
+    """Direct slice of case_bottom around the inclined PN532 NFC socket and rear foot."""
+    with BuildPart() as nfc_cutter:
+        with Locations((0.0, 158.0, 25.0)):
+            Box(56.0, 42.0, 55.0)
+    nfc_cutout = case_bottom & nfc_cutter.part
+    bb = nfc_cutout.bounding_box()
+    return nfc_cutout.moved(Location((-bb.center().X, -bb.center().Y, -bb.min.Z)))
+
 if __name__ == "__main__":
     print("Generating rapid test-print gauge plates (Direct Enclosure Slice)...")
     scr_plate = make_screen_test_plate()
@@ -111,12 +120,15 @@ if __name__ == "__main__":
     bat_plate = make_battery_test_plate()
     fan_plate = make_fan_test_plate()
     btn_plate = make_button_test_plate()
+    nfc_plate = make_nfc_test_plate()
 
     export_stl(scr_plate, os.path.join(OUTPUT_DIR, "test_plate_screen.stl"), tolerance=0.05, angular_tolerance=0.2)
     export_stl(ups_plate, os.path.join(OUTPUT_DIR, "test_plate_ups.stl"), tolerance=0.05, angular_tolerance=0.2)
     export_stl(bat_plate, os.path.join(OUTPUT_DIR, "test_plate_battery.stl"), tolerance=0.05, angular_tolerance=0.2)
     export_stl(fan_plate, os.path.join(OUTPUT_DIR, "test_plate_fan.stl"), tolerance=0.05, angular_tolerance=0.2)
     export_stl(btn_plate, os.path.join(OUTPUT_DIR, "test_plate_button.stl"), tolerance=0.05, angular_tolerance=0.2)
+    export_stl(nfc_plate, os.path.join(OUTPUT_DIR, "test_plate_nfc.stl"), tolerance=0.05, angular_tolerance=0.2)
+    export_step(nfc_plate, os.path.join(OUTPUT_DIR, "test_plate_nfc.step"))
     export_stl(button_plunger, os.path.join(OUTPUT_DIR, "test_button_plunger.stl"), tolerance=0.02, angular_tolerance=0.1)
     export_stl(button_keystone, os.path.join(OUTPUT_DIR, "test_button_keystone.stl"), tolerance=0.02, angular_tolerance=0.1)
 
@@ -126,5 +138,6 @@ if __name__ == "__main__":
     print("  3. test_plate_battery.stl")
     print("  4. test_plate_fan.stl")
     print("  5. test_plate_button.stl")
-    print("  6. test_button_plunger.stl")
-    print("  7. test_button_keystone.stl")
+    print("  6. test_plate_nfc.stl")
+    print("  7. test_button_plunger.stl")
+    print("  8. test_button_keystone.stl")

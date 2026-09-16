@@ -297,39 +297,66 @@ with BuildPart() as neg_lip:
 lip_negative_solid = lip_negative
 
 # ==========================================
-# 4. PN532 SLIDER MODULE
+# 4. PN532 SLIDER MODULE (INCLINED PEDESTAL AT 70.0 DEG)
 # ==========================================
-def build_pn532_slider(h=38.0):
-    w = 41.5
-    d = 3.3
-    t = 2.0
-    lip = 1.5
-    back_t = 1.5
-    with BuildPart() as slider:
-        # 1. Solid back plate to form a rigid partition wall behind battery cradle
-        with BuildSketch():
-            with Locations((0, -t/2)):
-                Rectangle(w + 2 * t, h + t)
-        extrude(amount=back_t)
-        # 2. Rails & Bottom Stopper
-        with BuildSketch(Plane.XY.offset(back_t)):
-            with Locations((-(w/2 + t/2), -t/2)):
-                Rectangle(t, h + t)
-            with Locations(((w/2 + t/2), -t/2)):
-                Rectangle(t, h + t)
-            with Locations((0, -(h/2 + t/2))):
-                Rectangle(w + t*2, t)
-        extrude(amount=d)
-        # 3. Retaining lips
-        with BuildSketch(Plane.XY.offset(back_t + d)):
-            with Locations((-(w/2 - lip/2), -t/2)):
-                Rectangle(lip, h + t)
-            with Locations(((w/2 - lip/2), -t/2)):
-                Rectangle(lip, h + t)
-            with Locations((0, -(h/2 - lip/2))):
-                Rectangle(w, lip)
-        extrude(amount=t)
-    return slider.part
+# Solid pedestal props the C-shape socket up to 70.0 deg (relative to horizontal),
+# elevating the slot entrance to Z = 47.65mm (clearing the 44.08mm battery wall by +3.57mm in Z,
+# and +5.05mm in Y), guaranteeing completely unobstructed drop-in insertion from the open top lid.
+# Sits virtually parallel to the 65.8 deg customer-facing rear tap surface (uniform 5-8mm air gap).
+nfc_angle = math.radians(70.0)
+nfc_w = 41.5
+nfc_h = 42.0
+nfc_d = 3.0
+nfc_t = 2.0
+nfc_lip = 1.5
+
+L_nfc = nfc_h + nfc_t # 44.0mm total channel length (42mm board + 2mm bottom stopper)
+y_bot = 160.00
+z_bot = 6.31        # Exactly on the slanted floor drop line
+y_top = y_bot - math.cos(nfc_angle) * L_nfc # 144.95mm
+z_top = z_bot + math.sin(nfc_angle) * L_nfc # 47.65mm
+
+nfc_plane = Plane(
+    origin=Vector(0, y_top, z_top),
+    x_dir=(1, 0, 0),
+    z_dir=Vector(0, math.sin(nfc_angle), math.cos(nfc_angle))
+)
+
+def build_pn532_slider():
+    # 1. Solid Incline Pedestal (anchors socket solidly to the slanted floor drop)
+    # Uses a clean, non-self-intersecting triangular wedge in Plane.YZ
+    with BuildPart() as p1:
+        with BuildSketch(Plane.YZ):
+            Polygon([
+                (141.69, 33.78),
+                (y_top,   z_top),
+                (y_bot,   z_bot)
+            ])
+        extrude(amount=(nfc_w + 2 * nfc_t) / 2, both=True)
+
+    # 2. C-Channel Rails & Bottom Stopper on nfc_plane
+    with BuildPart() as p2:
+        with BuildSketch(nfc_plane):
+            with Locations((-(nfc_w/2 + nfc_t/2), L_nfc/2)):
+                Rectangle(nfc_t, L_nfc)
+            with Locations(((nfc_w/2 + nfc_t/2), L_nfc/2)):
+                Rectangle(nfc_t, L_nfc)
+            with Locations((0, L_nfc - nfc_t/2)):
+                Rectangle(nfc_w + 2 * nfc_t, nfc_t)
+        extrude(amount=nfc_d + nfc_t)
+
+    # 3. Retaining lips
+    with BuildPart() as p3:
+        with BuildSketch(nfc_plane.offset(nfc_d)):
+            with Locations((-(nfc_w/2 - nfc_lip/2), (L_nfc - nfc_t)/2)):
+                Rectangle(nfc_lip, L_nfc - nfc_t)
+            with Locations(((nfc_w/2 - nfc_lip/2), (L_nfc - nfc_t)/2)):
+                Rectangle(nfc_lip, L_nfc - nfc_t)
+            with Locations((0, L_nfc - nfc_t/2)):
+                Rectangle(nfc_w, nfc_lip)
+        extrude(amount=nfc_t)
+
+    return p1.part + p2.part + p3.part
 
 # ==========================================
 # 5. CASE TOP & CASE BOTTOM HALVES
@@ -355,6 +382,9 @@ case_top = case_top - insert_holes.part
 
 # Bottom Tub
 case_bottom = (master_shell_part & bottom_mask_solid) + lip_positive_solid
+
+# Add PN532 Slider inside bottom tub flush on the angled surface below the battery wall
+case_bottom = case_bottom + build_pn532_slider()
 
 # Bottom-Entry Screwholes (drilled along the same screen-normal axis)
 with BuildPart() as bottom_screw_holes:
@@ -606,18 +636,6 @@ with BuildPart() as bat_cradle:
             Rectangle(bat_w + bat_tol + 2 * bat_wall, bat_l + bat_tol + 2 * bat_wall)
             Rectangle(bat_w + bat_tol, bat_l + bat_tol, mode=Mode.SUBTRACT)
     extrude(amount=bat_h)
-
-    # Attach PN532 NFC Slider to the REAR FACE of the battery cradle rear wall
-    # Facing backwards towards the rear sloped panel through a ~12-16mm air gap!
-    # Tapping an NFC card directly against the exterior shell puts it right in the sweet spot!
-    bat_rear_local_y = bat_cy_local + (bat_l + bat_tol) / 2.0 + bat_wall
-    slider_raw = build_pn532_slider(h=38.0)
-    slider_rot = slider_raw.moved(Location((0, 0, 0), (0, 1, 1), 180))
-    # Bottom stopper rests flush at local Z=0 (inner floor), open top pointing upwards (+Z)
-    slider_local = slider_rot.moved(Location((0, bat_rear_local_y, 21.0)))
-    slider_positioned = slider_local.moved(floor_plane.location)
-    add(slider_positioned)
-
 case_bottom = case_bottom + bat_cradle.part
 
 # --- 4. Right-Wall Momentary Power Button System (Option A: Drop-in T-Plunger with Full Fat Nib) ---
