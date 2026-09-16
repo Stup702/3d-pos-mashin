@@ -114,16 +114,15 @@ with BuildPart() as master:
     inner_cavity = extrude(amount=(enc_width - 2 * wall) / 2, both=True, mode=Mode.PRIVATE)
     master.part = master.part - inner_cavity
 
-    # E. Corner Screw Boss Pillars (ø11.0mm cylindrical columns merged into outer wall)
+    # E. Corner Screw Boss Pillars (aligned normal to screen face: 100% vertical when case_top is face-down)
     with BuildPart(mode=Mode.PRIVATE) as pillar_builder:
         for bx, by in boss_locs:
-            with BuildSketch(Plane.XY.offset(100)):
-                with Locations((bx, by)):
-                    Circle(radius=boss_r)
-                    x_sign = 1.0 if bx > 0 else -1.0
-                    with Locations((x_sign * (boss_r / 2), 0)):
-                        Rectangle(boss_r, boss_r * 2)
-            extrude(amount=-150)
+            z_seam = get_seam_z(by)
+            x_sign = 1.0 if bx > 0 else -1.0
+            cyl = Cylinder(radius=boss_r, height=150.0, mode=Mode.PRIVATE)
+            wall_merge = Box(boss_r, boss_r * 2, 150.0, mode=Mode.PRIVATE).moved(Location((x_sign * boss_r / 2, 0, 0)))
+            pillar_unit = (cyl + wall_merge).moved(Location((bx, by, z_seam), (math.degrees(face_angle), 0, 0)))
+            add(pillar_unit)
     contained_pillars = pillar_builder.part & outer_solid_boundary
     master.part = master.part + contained_pillars
 
@@ -193,7 +192,7 @@ with BuildPart() as master:
 master_shell_part = master.part
 
 # ==========================================
-# 2. CUTTER FOR CLAMSHELL SPLIT (WITH LEVEL HORIZONTAL BOSS MATING FACES)
+# 2. CUTTER FOR CLAMSHELL SPLIT
 # ==========================================
 # Entire rear back panel (Y >= 140) belongs to the bottom tub!
 with BuildPart() as split_cutter:
@@ -208,27 +207,6 @@ with BuildPart() as split_cutter:
             (-200.0,  get_seam_z(-200.0))
         ])
     extrude(amount=enc_width + 50, both=True)
-
-    # Level Horizontal Flat Steps at All 4 Screw Bosses:
-    # Forces boss mating faces to be 100% horizontal (Plane.XY, perpendicular to Z)
-    # Allows heat-set inserts to press straight down vertically into a dead flat face.
-    for bx, by in boss_locs:
-        z_flat = get_seam_z(by)
-        with BuildSketch(Plane.XY.offset(z_flat)):
-            with Locations((bx, by)):
-                Circle(radius=boss_r + 0.5)
-                x_sign = 1.0 if bx > 0 else -1.0
-                with Locations((x_sign * (boss_r / 2 + 1.0), 0)):
-                    Rectangle(boss_r + 2.0, boss_r * 2 + 2.0)
-        extrude(amount=100.0, mode=Mode.SUBTRACT)
-
-        with BuildSketch(Plane.XY.offset(z_flat)):
-            with Locations((bx, by)):
-                Circle(radius=boss_r + 0.5)
-                x_sign = 1.0 if bx > 0 else -1.0
-                with Locations((x_sign * (boss_r / 2 + 1.0), 0)):
-                    Rectangle(boss_r + 2.0, boss_r * 2 + 2.0)
-        extrude(amount=-100.0, mode=Mode.ADD)
 
 bottom_mask_solid = split_cutter.part
 
@@ -355,61 +333,41 @@ def build_pn532_slider():
 case_top = (master_shell_part - bottom_mask_solid) - lip_negative_solid
 
 # Blind Heat-Set Insert Holes in Top Lid (M3 x 4mm insert: hole diameter 3.8mm, depth 6.5mm)
-# Drilled vertically upwards into the 100% flat horizontal boss face
+# Drilled along the screen-normal vector (100% vertical when case_top is lying face-down on workbench)
 insert_hole_d = 3.8    # Sized for standard M3 brass heat-set insert (4.2mm knurl OD)
 insert_chamfer_d = 4.1 # 45 deg self-centering lead chamfer
 with BuildPart() as insert_holes:
     for bx, by in boss_locs:
-        z_flat = get_seam_z(by)
-        # Main insert blind hole: 6.5mm deep into the horizontal boss face
-        with BuildSketch(Plane.XY.offset(z_flat - 1.0)):
-            with Locations((bx, by)):
-                Circle(radius=insert_hole_d / 2)
-        extrude(amount=7.5)
+        z_seam = get_seam_z(by)
+        loc = Location((bx, by, z_seam), (math.degrees(face_angle), 0, 0))
+        # Main hole: 6.5mm deep into the boss along the pillar axis (+Z in rotated frame)
+        with Locations(loc * Location((0, 0, 6.5 / 2.0))):
+            Cylinder(radius=insert_hole_d / 2.0, height=6.5)
         # 45 deg lead-in chamfer for perfect vertical alignment when pressing with soldering iron
-        with BuildSketch(Plane.XY.offset(z_flat - 1.0)):
-            with Locations((bx, by)):
-                Circle(radius=insert_chamfer_d / 2)
-        extrude(amount=1.6)
+        with Locations(loc * Location((0, 0, 0.6 / 2.0))):
+            Cylinder(radius=insert_chamfer_d / 2.0, height=0.6)
 case_top = case_top - insert_holes.part
 
 # Bottom Tub
 case_bottom = (master_shell_part & bottom_mask_solid) + lip_positive_solid
 
-# Add PN532 Slider inside bottom tub
-back_dy = p3[0] - p5[0]
-back_dz = p3[1] - p5[1]
-back_angle = math.atan2(back_dz, back_dy)
-back_len = math.sqrt(back_dy**2 + back_dz**2)
-
-slider_solid = build_pn532_slider()
-slider_located = slider_solid.moved(
-    Location((0, (back_len / 2) - 5, 3 - math.cos(back_angle)))
-).moved(
-    Location((0, 0, 0), (1, 0, 0), math.degrees(back_angle))
-).moved(
-    Location((0, p5[0], p5[1]))
-)
-case_bottom = case_bottom + slider_located
-
-# Bottom-Entry Screwholes (screws inserted from desk base underneath)
+# Bottom-Entry Screwholes (drilled along the same screen-normal axis)
 with BuildPart() as bottom_screw_holes:
     for bx, by in boss_locs:
-        z_flat = get_seam_z(by)
-        # M3 screw clearance hole (3.4mm diameter) all the way through to the flat parting face
-        with BuildSketch(Plane.XY.offset(-1)):
-            with Locations((bx, by)):
-                Circle(radius=3.4 / 2)
-        extrude(amount=z_flat + 5)
+        z_seam = get_seam_z(by)
+        loc = Location((bx, by, z_seam), (math.degrees(face_angle), 0, 0))
+        # M3 clearance through-hole (ø3.4mm) drilled along -Z in rotated frame through the bottom
+        with Locations(loc * Location((0, 0, -30.0))):
+            Cylinder(radius=3.4 / 2.0, height=60.0)
         
-        # Recessed counterbore from the desk base (Z = 0)
-        # Front: 3.5mm deep (flange = 11.74mm, M3x16 reaches 4.26mm into insert)
-        # Back: 50.5mm deep (flange = 11.88mm, M3x16 reaches 4.12mm into insert)
-        cb_depth = 50.5 if by > 50 else 3.5
-        with BuildSketch(Plane.XY.offset(-1)):
-            with Locations((bx, by)):
-                Circle(radius=6.5 / 2)
-        extrude(amount=cb_depth + 1)
+        # Recessed counterbore from the underside along the screen-normal axis:
+        # Distance to underbelly along axis: Front = 12.34mm, Rear = 33.69mm.
+        # Front: 1.5mm deep counterbore (leaves 10.84mm flange, M3x16 reaches 5.16mm into insert)
+        # Back: 21.8mm deep counterbore (leaves 11.89mm flange, M3x16 reaches 4.11mm into insert)
+        cb_len = 21.8 if by > 50 else 1.5
+        cb_dist = 33.69 if by > 50 else 12.34
+        with Locations(loc * Location((0, 0, -cb_dist + cb_len / 2.0 - 0.1))):
+            Cylinder(radius=6.5 / 2.0, height=cb_len + 0.2)
 case_bottom = case_bottom - bottom_screw_holes.part
 
 # ==========================================
@@ -546,6 +504,14 @@ with BuildPart() as ups_cradle:
 
 case_bottom = case_bottom + ups_cradle.part
 
+# Ensure corner boss pillar in case_bottom does not intrude into the UPS pocket:
+with BuildPart() as ups_pocket_clearer:
+    with BuildSketch(floor_plane.offset(ups_pedestal_h)):
+        with Locations((ups_cx, ups_cy_local)):
+            Rectangle(ups_pocket_w, ups_pocket_l)
+    extrude(amount=ups_total_h + 10.0)
+case_bottom = case_bottom - ups_pocket_clearer.part
+
 # Open Port on Case Left Wall:
 # Starts at floor_plane.offset(ups_total_h) so that a solid 5.1mm threshold / half-wall
 # is retained at the outer wall, flush with the UPS perimeter walls and top of the PCB!
@@ -635,6 +601,17 @@ with BuildPart() as bat_cradle:
             Rectangle(bat_w + bat_tol + 2 * bat_wall, bat_l + bat_tol + 2 * bat_wall)
             Rectangle(bat_w + bat_tol, bat_l + bat_tol, mode=Mode.SUBTRACT)
     extrude(amount=bat_h)
+
+    # Attach PN532 NFC Slider to the REAR FACE of the battery cradle rear wall
+    # Facing backwards towards the rear sloped panel through a ~15-20mm air gap!
+    # Tapping an NFC card directly against the exterior shell puts it right in the sweet spot!
+    bat_rear_local_y = bat_cy_local + (bat_l + bat_tol) / 2.0 + bat_wall
+    slider_raw = build_pn532_slider()
+    slider_rot = slider_raw.moved(Location((0, 0, 0), (0, 1, 1), 180))
+    # Bottom stopper at floor (Z=0), open top pointing upwards (+Z)
+    slider_positioned = slider_rot.moved(Location((0, bat_rear_local_y, 23.4)))
+    add(slider_positioned)
+
 case_bottom = case_bottom + bat_cradle.part
 
 # --- 4. Right-Wall Momentary Power Button System (Option A: Drop-in T-Plunger with Full Fat Nib) ---
