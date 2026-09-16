@@ -840,12 +840,12 @@ batt_wall_inner_x = enc_width / 2.0 - wall # 46.0mm
 # Daughterboard & Pocket Dimensions:
 batt_pcb_l = 15.10       # Nominal PCB length
 batt_pcb_w = 7.80        # Nominal PCB width (height along Z)
-batt_pcb_t = 1.00        # Nominal PCB thickness
+batt_pcb_t = 1.45        # Caliper measured thickness with SMD LED
 
-batt_slot_t = 1.40       # Internal slot depth along X (1.0mm board + 0.40mm sliding clearance)
+batt_slot_t = 2.00       # Clean 2.00mm slot (0.55mm nominal give, ~0.40mm net clearance after FDM print shrinkage)
 batt_slot_w = 8.20       # Internal slot height along Z (7.8mm board + 0.40mm clearance)
-cradle_wall_t = 1.20     # 1.2mm solid inner retention wall (3 perimeter loops)
-cradle_depth = batt_slot_t + cradle_wall_t   # 2.60mm protrusion into cavity (reaches X = 43.40mm, >8.0mm clear of UPS)
+cradle_wall_t = 1.25     # 1.25mm solid inner retention wall (exactly 3 solid perimeter loops at 0.42mm line width)
+cradle_depth = batt_slot_t + cradle_wall_t   # 3.25mm protrusion into cavity (reaches X = 42.75mm, >7.35mm clear of UPS)
 batt_led_z = 23.50       # 23.5mm elevation centerline
 
 # Y Coordinates:
