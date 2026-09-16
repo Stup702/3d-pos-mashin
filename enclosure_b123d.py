@@ -602,11 +602,14 @@ with BuildPart() as ups_cradle:
 
 case_bottom = case_bottom + ups_cradle.part
 
-# Ensure corner boss pillar in case_bottom does not intrude into the UPS pocket:
+# Ensure corner boss pillar in case_bottom does not intrude into the UPS pocket,
+# while preserving the central locating pin (ø3.45mm) on its ø8.0mm pedestal:
 with BuildPart() as ups_pocket_clearer:
     with BuildSketch(floor_plane.offset(ups_pedestal_h)):
         with Locations((ups_cx, ups_cy_local)):
             Rectangle(ups_pocket_w, ups_pocket_l)
+        with Locations((ups_boss_x, ups_boss_y)):
+            Circle(radius=ups_boss_outer_d / 2.0, mode=Mode.SUBTRACT)
     extrude(amount=ups_total_h + 10.0)
 case_bottom = case_bottom - ups_pocket_clearer.part
 
@@ -821,38 +824,42 @@ with BuildPart() as button_cradle_cutters:
 case_bottom = (case_bottom + button_cradle_boss) - button_cradle_cutters.part
 
 # ==========================================
-# 5D. BATTERY INDICATOR VIEWING SLIT & MONOLITHIC SOLID-PEDESTAL CRADLE (RIGHT WALL)
+# 5D. BATTERY INDICATOR VIEWING SLIT & DUAL-STAGE CRADLE (RIGHT WALL)
 # ==========================================
-# Daughterboard specs: 4 SMD LEDs, total length 9.2mm, width 6.5-7.0mm, thickness 2.0mm.
-# An internal monolithic solid-pedestal cradle on the inner right wall (X = 46.0mm) with its FRONT
-# (chin side, -Y) wide open so the board slides in from the front towards the rear stop (button side, +Y),
-# while the wires exit directly towards the front chin / UPS board.
-# The cradle is anchored with a massive solid pedestal extending all the way down to the 8.13°
-# underbelly floor, completely eliminating fragile cantilevered shelves and making the corner indestructible.
-# The 4.0mm outer wall remains 100% full thickness (zero wall thinning), with a
-# sleek 8.5mm x 0.8mm micro-slit pierced through to illuminate the 4 LEDs.
+# Daughterboard specs: 4 SMD LEDs, total length 15.1mm (+2.0mm extra length requested), width 7.8mm, thickness 1.0mm.
+# An internal monolithic dual-stage cradle on the inner right wall (X = 46.0mm):
+# 1. 12.0mm Retaining Hood: wraps around daughterboard for Y in [10.0, 22.0] mm, terminating at rear stop Y = 22.0mm
+#    with 1.2mm stop wall at Y in [22.0, 23.2] mm (leaving 1.8mm clearance to button cradle at Y = 25.0mm).
+# 2. Bottom Support Shelf: extends forward past the 12mm hood to Y = 4.5mm (top face at Z = 19.40mm)
+#    supporting the protruding tail of the PCB and wire leads, leaving the top and inner side wide open.
+# 3. Micro-Slit: starts 1.0mm from pocket stop, spanning 9.4mm x 0.8mm (Y in [11.6, 21.0] mm, Z = 23.50mm),
+#    leaving 1.6mm solid wall forward of the slit and 1.0mm solid stop behind it.
 
 batt_wall_inner_x = enc_width / 2.0 - wall # 46.0mm
 
-# Pocket dimensions:
-batt_slot_t = 2.2        # Internal slot depth along X (for 2.0mm board + clearance)
-batt_slot_w = 7.0        # Internal slot height along Z (for 0.6~0.7cm board + clearance)
-batt_slot_l = 10.0       # Internal slot length along Y (for 9.2mm board + clearance)
-cradle_wall_t = 1.2      # 1.2mm solid inner retention wall
+# Daughterboard & Pocket Dimensions:
+batt_pcb_l = 15.10       # Nominal PCB length
+batt_pcb_w = 7.80        # Nominal PCB width (height along Z)
+batt_pcb_t = 1.00        # Nominal PCB thickness
 
-cradle_depth = batt_slot_t + cradle_wall_t   # 3.4mm protrusion into case cavity (reaches X = 42.6mm, >5.7mm clear of UPS)
-batt_led_z = 26.0        # Lowered to 26.0mm: guarantees >= 1.66mm solid top roof under parting seam!
+batt_slot_t = 1.40       # Internal slot depth along X (1.0mm board + 0.40mm sliding clearance)
+batt_slot_w = 8.20       # Internal slot height along Z (7.8mm board + 0.40mm clearance)
+cradle_wall_t = 1.20     # 1.2mm solid inner retention wall (3 perimeter loops)
+cradle_depth = batt_slot_t + cradle_wall_t   # 2.60mm protrusion into cavity (reaches X = 43.40mm, >8.0mm clear of UPS)
+batt_led_z = 23.50       # 23.5mm elevation centerline
 
-# Along Y: Rear solid stop (+Y) at Y = 21.0mm, outer box ends at Y = 22.0mm (3.0mm clear of button cradle at Y=25.0)
-cradle_rear_y = 22.0
-cradle_l = batt_slot_l + 1.2                 # 11.2mm total box length along Y
-cradle_front_y = cradle_rear_y - cradle_l    # 10.8mm (wide open entrance on chin side)
-cradle_center_y = (cradle_rear_y + cradle_front_y) / 2.0 # 16.4mm
+# Y Coordinates:
+slot_rear_stop_y = 22.00 # PCB rear stop
+cradle_rear_y = slot_rear_stop_y + cradle_wall_t # 23.20mm (1.8mm clear of button cradle at Y = 25.0mm)
+hood_front_y = 10.00     # 12.0mm hood entrance (Y in [10.0, 22.0] mm)
+shelf_front_y = 4.50     # Bottom support shelf extends forward to Y = 4.5mm (17.5mm total shelf length)
+shelf_top_z = batt_led_z - batt_slot_w / 2.0 # 19.40mm
 
-# Viewing micro-slit (8.5mm x 0.8mm, centered on the 9.2mm board at Y = 16.4mm, Z = 26.0mm)
-batt_slit_y = 16.4
-batt_slit_l = 8.5
-batt_slit_h = 0.8
+# Viewing micro-slit (9.4mm x 0.8mm, starting 1.0mm from pocket stop at Y = 22.0mm)
+# Spans Y in [11.6, 21.0] mm, centered at Y = 16.3mm, Z = 23.5mm
+batt_slit_y = 16.30
+batt_slit_l = 9.40
+batt_slit_h = 0.80
 
 # 1. Through-wall viewing micro-slit with rounded corners (R=0.35mm)
 with BuildPart() as batt_slit_cutter:
@@ -861,33 +868,41 @@ with BuildPart() as batt_slit_cutter:
             RectangleRounded(batt_slit_l, batt_slit_h, radius=0.35)
     extrude(amount=4.0, both=True)
 
-# 2. Monolithic Solid Pedestal Boss (rooted directly into the 8.13° inclined underbelly floor)
-boss_x_min = batt_wall_inner_x - cradle_depth  # 42.6mm
-boss_x_max = batt_wall_inner_x + wall           # 50.0mm (fused into right wall)
-boss_dx = boss_x_max - boss_x_min               # 7.4mm
-boss_cx = (boss_x_min + boss_x_max) / 2.0       # 46.3mm
-boss_z_min = 10.0                               # Deep root below inclined underbelly floor
-boss_z_max = 36.0                               # Extends above parting seam
-boss_hz = boss_z_max - boss_z_min               # 26.0mm
-boss_cz = (boss_z_min + boss_z_max) / 2.0       # 23.0mm
+# 2. Monolithic Stepped Solid Boss (Single 6-vertex L-polygon in Plane.YZ, extruded along X)
+boss_x_min = batt_wall_inner_x - cradle_depth  # 43.40mm
+boss_x_max = batt_wall_inner_x + wall           # 50.00mm (fused into right wall)
+boss_dx = boss_x_max - boss_x_min               # 6.60mm
+boss_cx = (boss_x_min + boss_x_max) / 2.0       # 46.70mm
+boss_z_min = 8.0                                # Deep root into underbelly floor
+boss_z_max = 38.0                               # Extends above parting seam
 
 with BuildPart() as batt_boss_raw:
-    with Locations((boss_cx, cradle_center_y, boss_cz)):
-        Box(boss_dx, cradle_l, boss_hz)
+    with BuildSketch(Plane.YZ.offset(boss_cx)):
+        Polygon([
+            (shelf_front_y, boss_z_min),   # (4.50, 8.00)
+            (cradle_rear_y, boss_z_min),   # (23.20, 8.00)
+            (cradle_rear_y, boss_z_max),   # (23.20, 38.00)
+            (hood_front_y,  boss_z_max),   # (10.00, 38.00)
+            (hood_front_y,  shelf_top_z),  # (10.00, 19.40)
+            (shelf_front_y, shelf_top_z),  # (4.50, 19.40)
+        ])
+    extrude(amount=boss_dx / 2.0, both=True)
 
 batt_cradle_solid = batt_boss_raw.part & (outer_solid_boundary & bottom_mask_solid)
 
-# 3. Internal Slide Channel Cutter (OPEN on chin side -Y, CLOSED on button side +Y stop at 21.0mm)
-# Slot spans X in [43.8, 46.01] mm (zero thinning of the 4.0mm outer wall at X in [46.0, 50.0])
-slot_cutter_len = batt_slot_l + 6.0             # 16.0mm (overshoots front entrance past Y=10.8 for clean open slide)
-slot_cutter_cy = 21.0 - slot_cutter_len / 2.0   # 13.0mm
-slot_cutter_x = batt_wall_inner_x - batt_slot_t / 2.0 # 44.9mm
+# 3. Internal Slide Channel Cutter (OPEN on chin side -Y, CLOSED on button side +Y stop at 22.0mm)
+# Front mouth extends past forward shelf (overshoots Y = 4.5mm to Y = 3.5mm)
+# Rear stop locks dead at Y = 22.00mm (leaves 1.20mm solid rear stop wall)
+slot_cutter_front_y = 3.50
+slot_cutter_len = slot_rear_stop_y - slot_cutter_front_y   # 18.50 mm
+slot_cutter_cy  = (slot_rear_stop_y + slot_cutter_front_y) / 2.0  # 12.75 mm
+slot_cutter_x   = batt_wall_inner_x - batt_slot_t / 2.0    # 45.30 mm
 
 with BuildPart() as batt_slot_cutter:
     with Locations((slot_cutter_x, slot_cutter_cy, batt_led_z)):
         Box(batt_slot_t + 0.02, slot_cutter_len, batt_slot_w)
 
-# 4. Integrate into case_bottom:
+# 4. Final Boolean Integration into case_bottom:
 case_bottom = (case_bottom + batt_cradle_solid) - batt_slot_cutter.part - batt_slit_cutter.part
 
 print("Case Top Volume:", case_top.volume)
