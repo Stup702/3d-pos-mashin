@@ -387,11 +387,58 @@ with BuildPart() as insert_holes:
             Cone(bottom_radius=insert_chamfer_d / 2.0, top_radius=insert_hole_d / 2.0, height=insert_chamfer_depth)
 case_top = case_top - insert_holes.part
 
+# ==========================================
+# 4B. ACER-STYLE STAGGERED LABYRINTH AIR VENT (CASE TOP LEFT WALL)
+# ==========================================
+# Spans Y in [40.0, 75.0] mm, directly flanking the 30mm cooling fan and RPi 4 CPU.
+# Dual-staggered slat rows (1.4mm outer slats, 1.2mm plenum corridor, 1.4mm inner slats)
+# provide 100% normal line-of-sight optical occlusion while maintaining high airflow throughput.
+vent_start_y = 40.0
+vent_end_y = 75.0
+vent_len = vent_end_y - vent_start_y  # 35.0 mm
+vent_h = 14.0                         # 14.0 mm window height
+sill_clear = 4.0                      # 4.0 mm above parting seam (preserves 1.70mm solid bridge over lip joint)
+pitch = 4.0                           # 4.0 mm pitch (2.4mm slat, 1.6mm gap)
+w_slat = 2.4
+w_gap = 1.6
+
+vent_plane = Plane(
+    origin=(-50.0, vent_start_y, get_seam_z(vent_start_y) + sill_clear),
+    x_dir=(0, math.cos(face_angle), math.sin(face_angle)),
+    z_dir=(1, 0, 0)
+)
+
+with BuildPart() as acer_vent_cutter:
+    num_slots = 8
+    # 1. Outer slot row: 1.4mm thick outer shell (overshoot -0.5 to +1.4)
+    for i in range(num_slots):
+        slot_cy = (i + 0.5) * pitch + 1.0
+        with BuildSketch(vent_plane.offset(-0.5)):
+            with Locations((slot_cy, vent_h / 2.0)):
+                Rectangle(w_gap, vent_h)
+        extrude(amount=1.9)
+    
+    # 2. Central plenum corridor: 1.2mm deep airway chamber connecting outer and inner slots
+    with BuildSketch(vent_plane.offset(1.4)):
+        with Locations((vent_len / 2.0, vent_h / 2.0)):
+            Rectangle(vent_len - 1.0, vent_h)
+    extrude(amount=1.2)
+
+    # 3. Inner slot row: 1.4mm thick inner shell (overshoot +2.6 to +4.5)
+    for i in range(num_slots - 1):
+        slot_cy = (i + 1.0) * pitch + 1.0
+        with BuildSketch(vent_plane.offset(2.6)):
+            with Locations((slot_cy, vent_h / 2.0)):
+                Rectangle(w_gap, vent_h)
+    extrude(amount=1.9)
+
+case_top = case_top - acer_vent_cutter.part
+
 # Bottom Tub
 case_bottom = (master_shell_part & bottom_mask_solid) + lip_positive_solid
 
 # Add PN532 Slider inside bottom tub flush on the angled surface below the battery wall
-case_bottom = case_bottom + build_pn532_slider()
+case_bottom = case_bottom + (build_pn532_slider() & outer_solid_boundary)
 
 # Bottom-Entry Screwholes (drilled along the same screen-normal axis)
 with BuildPart() as bottom_screw_holes:
