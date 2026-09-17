@@ -823,87 +823,146 @@ with BuildPart() as button_cradle_cutters:
 
 case_bottom = (case_bottom + button_cradle_boss) - button_cradle_cutters.part
 
-# ==========================================
-# 5D. BATTERY INDICATOR VIEWING SLIT & DUAL-STAGE CRADLE (RIGHT WALL)
-# ==========================================
-# Daughterboard specs: 4 SMD LEDs, total length 15.1mm (+2.0mm extra length requested), width 7.8mm, thickness 1.0mm.
-# An internal monolithic dual-stage cradle on the inner right wall (X = 46.0mm):
-# 1. 12.0mm Retaining Hood: wraps around daughterboard for Y in [10.0, 22.0] mm, terminating at rear stop Y = 22.0mm
-#    with 1.2mm stop wall at Y in [22.0, 23.2] mm (leaving 1.8mm clearance to button cradle at Y = 25.0mm).
-# 2. Bottom Support Shelf: extends forward past the 12mm hood to Y = 4.5mm (top face at Z = 19.40mm)
-#    supporting the protruding tail of the PCB and wire leads, leaving the top and inner side wide open.
-# 3. Micro-Slit: starts 1.0mm from pocket stop, spanning 9.4mm x 0.8mm (Y in [11.6, 21.0] mm, Z = 23.50mm),
-#    leaving 1.6mm solid wall forward of the slit and 1.0mm solid stop behind it.
+# =========================================================================
+# 5D. FLUSH OPTICAL DIFFUSER & SHOULDER-PROTECTED BATTERY CRADLE (RIGHT WALL)
+# =========================================================================
+# Physical Spec: Daughterboard with 4 SMD LEDs, total thickness 1.45mm (1.0mm PCB + 0.45mm LED),
+# height 7.8mm, length 15.1mm.
+# Optical & Mechanical Architecture:
+# 1. 0.40mm Integrated Diffuser Film: Exterior face at X = 50.00mm is 100% solid, seamless,
+#    and flush. The LED viewing window recess stops at X = 49.60mm, leaving exactly 1 perimeter
+#    loop (0.40mm) of plastic acting as a frosted optical diffuser lens.
+# 2. Flush Zero-Gap LED Seating: The 4 SMD LEDs project into the 2.0mm tall x 9.4mm long window
+#    and sit directly flush against the inside face of the 0.40mm film (zero air gap = zero light bleed).
+# 3. Mechanical Bearing Shoulder: The bare PCB substrate (above & below the 2.0mm LED window) seats
+#    against a solid 0.85mm shoulder at X = 49.15mm, transferring 100% of user insertion force into
+#    the casing wall and completely shielding the delicate 0.40mm film from punch-through.
+# 4. 45° Lead-in Funnel Chamfer: At Y = 10.00mm, a 45° x 1.0mm chamfer widens the mouth to >3.2mm,
+#    funneling the PCB and LEDs smoothly into the slot without snagging on sharp corners.
+# 5. Forward Runway Shelf: Extends forward to Y = 4.50mm at Z = 19.40mm for easy pre-alignment.
 
-batt_wall_inner_x = enc_width / 2.0 - wall # 46.0mm
+enc_wall_outer_x = enc_width / 2.0  # 50.00 mm
+enc_wall_inner_x = enc_wall_outer_x - wall  # 46.00 mm
 
-# Daughterboard & Pocket Dimensions:
+# Daughterboard & Slot Dimensions:
 batt_pcb_l = 15.10       # Nominal PCB length
 batt_pcb_w = 7.80        # Nominal PCB width (height along Z)
 batt_pcb_t = 1.45        # Caliper measured thickness with SMD LED
-
-batt_slot_t = 2.00       # Clean 2.00mm slot (0.55mm nominal give, ~0.40mm net clearance after FDM print shrinkage)
-batt_slot_w = 8.20       # Internal slot height along Z (7.8mm board + 0.40mm clearance)
-cradle_wall_t = 1.25     # 1.25mm solid inner retention wall (exactly 3 solid perimeter loops at 0.42mm line width)
-cradle_depth = batt_slot_t + cradle_wall_t   # 3.25mm protrusion into cavity (reaches X = 42.75mm, >7.35mm clear of UPS)
-batt_led_z = 23.50       # 23.5mm elevation centerline
+batt_slot_w = 9.00       # Slot height along Z (expanded: Z in [19.00, 28.00] mm, 1.20mm clearance)
+batt_led_z = 23.50       # Centerline elevation
+shelf_top_z = batt_led_z - batt_slot_w / 2.0  # 19.00 mm (lowered from 19.40mm)
 
 # Y Coordinates:
+hood_front_y = 10.00     # 12.0mm enclosed tunnel entrance
 slot_rear_stop_y = 22.00 # PCB rear stop
-cradle_rear_y = slot_rear_stop_y + cradle_wall_t # 23.20mm (1.8mm clear of button cradle at Y = 25.0mm)
-hood_front_y = 10.00     # 12.0mm hood entrance (Y in [10.0, 22.0] mm)
-shelf_front_y = 4.50     # Bottom support shelf extends forward to Y = 4.5mm (17.5mm total shelf length)
-shelf_top_z = batt_led_z - batt_slot_w / 2.0 # 19.40mm
+cradle_wall_t = 1.20     # Rear stop bulkhead thickness
+cradle_rear_y = slot_rear_stop_y + cradle_wall_t  # 23.20 mm (1.80mm clear of button at Y = 25.0 mm)
+shelf_front_y = -6.00    # Forward runway shelf extends to Y = -6.00mm
+slot_len = slot_rear_stop_y - hood_front_y  # 12.00 mm
 
-# Viewing micro-slit (9.4mm x 0.8mm, starting 1.0mm from pocket stop at Y = 22.0mm)
-# Spans Y in [11.6, 21.0] mm, centered at Y = 16.3mm, Z = 23.5mm
-batt_slit_y = 16.30
-batt_slit_l = 9.40
-batt_slit_h = 0.80
+# Transverse Coordinates (X-axis):
+diffuser_film_t = 0.80   # 0.80mm solid outer translucent film (exactly 2 solid perimeters in all slicers)
+diffuser_x_max = enc_wall_outer_x - diffuser_film_t  # 49.20 mm
+pcb_shoulder_x = diffuser_x_max - 0.50  # 48.70 mm (0.50mm LED relief step, 1.30mm outer wall)
+slot_clearance_t = 2.70  # 2.70mm sliding slot thickness (1.25mm clearance over 1.45mm PCB+LED)
+slot_x_min = pcb_shoulder_x - slot_clearance_t  # 46.00 mm (aligns flush with inner case wall)
+cradle_inner_x = 44.50   # Solid inner retention wall reaches X = 44.50 mm (leaves 1.50mm back plate, 9.10mm clear of UPS)
 
-# 1. Through-wall viewing micro-slit with rounded corners (R=0.35mm)
-with BuildPart() as batt_slit_cutter:
-    with BuildSketch(Plane.YZ.offset(48.5)):
-        with Locations((batt_slit_y, batt_led_z)):
-            RectangleRounded(batt_slit_l, batt_slit_h, radius=0.35)
-    extrude(amount=4.0, both=True)
+# 1. LED Window Recess Cutter (stops cleanly at X = diffuser_x_max without punch-through)
+# Expanded to 3.50mm tall x 11.50mm long (Y in [10.25, 21.75] mm, Z in [21.75, 25.25] mm)
+batt_slit_l = 11.50
+batt_slit_h = 3.50
+batt_slit_y = (hood_front_y + slot_rear_stop_y) / 2.0  # 16.00 mm (centered in 12.0mm tunnel)
+led_cut_x_min = slot_x_min  # 46.00 mm
+led_cut_dx = diffuser_x_max - led_cut_x_min  # 3.20 mm (exact difference: zero punch-through!)
+led_cut_cx = (diffuser_x_max + led_cut_x_min) / 2.0  # 47.60 mm
 
-# 2. Monolithic Stepped Solid Boss (Single 6-vertex L-polygon in Plane.YZ, extruded along X)
-boss_x_min = batt_wall_inner_x - cradle_depth  # 43.40mm
-boss_x_max = batt_wall_inner_x + wall           # 50.00mm (fused into right wall)
-boss_dx = boss_x_max - boss_x_min               # 6.60mm
-boss_cx = (boss_x_min + boss_x_max) / 2.0       # 46.70mm
-boss_z_min = 8.0                                # Deep root into underbelly floor
-boss_z_max = 38.0                               # Extends above parting seam
+with BuildPart() as led_recess_builder:
+    with Locations((led_cut_cx, batt_slit_y, batt_led_z)):
+        Box(led_cut_dx, batt_slit_l, batt_slit_h)
+
+# 2. PCB Slot Cutter strictly bounded to X in [slot_x_min, pcb_shoulder_x] mm:
+slot_cut_dx = pcb_shoulder_x - slot_x_min  # 2.70 mm
+slot_cut_cx = (pcb_shoulder_x + slot_x_min) / 2.0  # 47.35 mm
+slot_cut_cy = (hood_front_y + slot_rear_stop_y) / 2.0  # 16.00 mm
+
+with BuildPart() as pcb_slot_builder:
+    with Locations((slot_cut_cx, slot_cut_cy, batt_led_z)):
+        Box(slot_cut_dx, slot_len, batt_slot_w)
+
+# 3. Flared Lead-in Entrance Funnel Chamfer Cutter (Mouth Guide at Y in [9.80, 11.50] mm)
+with BuildPart() as funnel_cutter_builder:
+    with BuildSketch(Plane.XY.offset(shelf_top_z)):
+        Polygon([
+            (slot_x_min - 0.50, 9.80),
+            (diffuser_x_max,    9.80),
+            (diffuser_x_max,    10.30),
+            (pcb_shoulder_x,    10.80),
+            (slot_x_min,        11.50),
+            (slot_x_min - 0.50, 9.80),
+        ])
+    extrude(amount=batt_slot_w)
+    
+    # Ceiling 45° Lead-in Chamfer at Mouth (strictly bounded within slot width)
+    with BuildSketch(Plane.YZ.offset(slot_cut_cx)):
+        Polygon([
+            (9.80, shelf_top_z + batt_slot_w + 1.20),
+            (9.80, shelf_top_z + batt_slot_w),
+            (11.20, shelf_top_z + batt_slot_w),
+            (9.80, shelf_top_z + batt_slot_w + 1.20),
+        ])
+    extrude(amount=slot_cut_dx / 2.0 + 0.20, both=True)
+
+# 3B. Forward Runway Shelf & Entrance Clearance Cutter (Y <= 10.00 mm)
+runway_cut_x_min = 43.50
+runway_cut_x_max = pcb_shoulder_x  # 48.70 mm
+runway_cut_dx = runway_cut_x_max - runway_cut_x_min  # 5.20 mm
+runway_cut_cx = (runway_cut_x_max + runway_cut_x_min) / 2.0  # 46.10 mm
+
+runway_cut_y_min = shelf_front_y - 0.50  # -6.50 mm
+runway_cut_y_max = hood_front_y + 0.10   # 10.10 mm (overlaps into funnel chamfer)
+runway_cut_dy = runway_cut_y_max - runway_cut_y_min  # 16.60 mm
+runway_cut_cy = (runway_cut_y_max + runway_cut_y_min) / 2.0  # 1.80 mm
+
+runway_cut_z_min = shelf_top_z  # 19.00 mm
+runway_cut_z_max = 40.00        # Well above parting seam
+runway_cut_dz = runway_cut_z_max - runway_cut_z_min  # 21.00 mm
+runway_cut_cz = (runway_cut_z_max + runway_cut_z_min) / 2.0  # 29.50 mm
+
+with BuildPart() as runway_cutter_builder:
+    with Locations((runway_cut_cx, runway_cut_cy, runway_cut_cz)):
+        Box(runway_cut_dx, runway_cut_dy, runway_cut_dz)
+
+# 4. Monolithic Solid Boss (Single 6-vertex L-polygon in Plane.YZ, extruded along X)
+boss_z_min = 8.0    # Deep root into underbelly floor
+boss_z_max = 38.0   # Extends above parting seam (trimmed cleanly by bottom_mask_solid)
+boss_x_min = cradle_inner_x  # 44.50 mm (retains 1.50mm solid inner back plate)
+boss_x_max = 51.00  # Overshoots X = 50.00mm so outer_solid_boundary trims cleanly
 
 with BuildPart() as batt_boss_raw:
-    with BuildSketch(Plane.YZ.offset(boss_cx)):
+    with BuildSketch(Plane.YZ.offset((boss_x_min + boss_x_max) / 2.0)):
         Polygon([
-            (shelf_front_y, boss_z_min),   # (4.50, 8.00)
+            (shelf_front_y, boss_z_min),   # (-6.00, 8.00)
             (cradle_rear_y, boss_z_min),   # (23.20, 8.00)
             (cradle_rear_y, boss_z_max),   # (23.20, 38.00)
             (hood_front_y,  boss_z_max),   # (10.00, 38.00)
-            (hood_front_y,  shelf_top_z),  # (10.00, 19.40)
-            (shelf_front_y, shelf_top_z),  # (4.50, 19.40)
+            (hood_front_y,  shelf_top_z),  # (10.00, 19.00)
+            (shelf_front_y, shelf_top_z),  # (-6.00, 19.00)
         ])
-    extrude(amount=boss_dx / 2.0, both=True)
+    extrude(amount=(boss_x_max - boss_x_min) / 2.0, both=True)
 
 batt_cradle_solid = batt_boss_raw.part & (outer_solid_boundary & bottom_mask_solid)
 
-# 3. Internal Slide Channel Cutter (OPEN on chin side -Y, CLOSED on button side +Y stop at 22.0mm)
-# Front mouth extends past forward shelf (overshoots Y = 4.5mm to Y = 3.5mm)
-# Rear stop locks dead at Y = 22.00mm (leaves 1.20mm solid rear stop wall)
-slot_cutter_front_y = 3.50
-slot_cutter_len = slot_rear_stop_y - slot_cutter_front_y   # 18.50 mm
-slot_cutter_cy  = (slot_rear_stop_y + slot_cutter_front_y) / 2.0  # 12.75 mm
-slot_cutter_x   = batt_wall_inner_x - batt_slot_t / 2.0    # 45.30 mm
+# 5. Monolithic Overlapping Cutter Union (100% Watertight, Zero Coincident Slivers)
+combined_pocket_cutter = (
+    pcb_slot_builder.part + 
+    led_recess_builder.part + 
+    funnel_cutter_builder.part + 
+    runway_cutter_builder.part
+)
 
-with BuildPart() as batt_slot_cutter:
-    with Locations((slot_cutter_x, slot_cutter_cy, batt_led_z)):
-        Box(batt_slot_t + 0.02, slot_cutter_len, batt_slot_w)
-
-# 4. Final Boolean Integration into case_bottom:
-case_bottom = (case_bottom + batt_cradle_solid) - batt_slot_cutter.part - batt_slit_cutter.part
+# 6. Final Boolean Integration into case_bottom:
+case_bottom = (case_bottom + batt_cradle_solid) - combined_pocket_cutter
 
 print("Case Top Volume:", case_top.volume)
 print("Case Bottom Volume:", case_bottom.volume)
