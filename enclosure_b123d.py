@@ -366,14 +366,14 @@ case_top = (master_shell_part - bottom_mask_solid) - lip_negative_solid
 
 # Blind Heat-Set Insert Holes in Top Lid with Melt Reservoir & Anti-Burr Micro-Chamfer
 # Drilled along the screen-normal vector (100% vertical when case_top is lying face-down on workbench)
-# Sized specifically for M3 inserts with 4.6mm outer whirl knurl:
+# Sized specifically for M3 asymmetric inserts (Ruthex / CNC Kitchen):
 # 1. Main Bore: straight ø4.0mm (smooth ø3.95mm nose seats cold, acting as shield against thread clogging)
 # 2. Melt Reservoir: 8.5mm total depth (provides 2.8mm+ empty relief chamber beneath insert)
-# 3. Straight Pilot Counterbore: ø5.0mm x 1.20mm deep (holds insert perfectly perpendicular prior to heating)
+# 3. Straight Pilot Counterbore: ø4.25mm x 1.00mm deep (seats ø3.95mm smooth nose cold, prevents tilting)
 insert_hole_d = 4.0          # Straight ø4.00mm bore (Ruthex/CNC Kitchen standard for 4.6mm knurl)
 insert_hole_depth = 8.5      # 8.50mm total depth (provides 2.8mm+ melt reservoir beneath insert)
-insert_pilot_d = 5.0         # Straight ø5.00mm pilot counterbore (seats insert straight before heating)
-insert_pilot_depth = 1.2     # 1.20mm pilot depth (captures knurl to prevent tilting)
+insert_pilot_d = 4.25        # Straight ø4.25mm pilot counterbore (seats ø3.95mm smooth nose cold, prevents tilting)
+insert_pilot_depth = 1.0     # 1.00mm pilot depth (matches smooth lead-in nose length)
 
 with BuildPart() as insert_holes:
     for bx, by in boss_locs:
@@ -382,7 +382,7 @@ with BuildPart() as insert_holes:
         # 1. Main straight bore + melt reservoir (8.5mm deep into boss along pillar axis)
         with Locations(loc * Location((0, 0, insert_hole_depth / 2.0))):
             Cylinder(radius=insert_hole_d / 2.0, height=insert_hole_depth)
-        # 2. Straight cylindrical pilot counterbore at opening mouth (1.2mm deep)
+        # 2. Straight cylindrical pilot counterbore at opening mouth (1.0mm deep)
         with Locations(loc * Location((0, 0, insert_pilot_depth / 2.0))):
             Cylinder(radius=insert_pilot_d / 2.0, height=insert_pilot_depth)
 case_top = case_top - insert_holes.part
