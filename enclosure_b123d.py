@@ -368,23 +368,23 @@ case_top = (master_shell_part - bottom_mask_solid) - lip_negative_solid
 # Drilled along the screen-normal vector (100% vertical when case_top is lying face-down on workbench)
 # Sized specifically for M3 inserts with 4.6mm outer whirl knurl:
 # 1. Main Bore: straight ø4.0mm (smooth ø3.95mm nose seats cold, acting as shield against thread clogging)
-# 2. Melt Reservoir: 8.5mm total depth (leaves 3mm+ empty relief chamber beneath insert)
-# 3. Micro-Chamfer: ø4.8mm x 45 deg (0.4mm deep) to prevent surface mushrooming/burrs
-insert_hole_d = 4.0        # Straight ø4.0mm bore (Ruthex/CNC Kitchen standard for 4.6mm knurl)
-insert_hole_depth = 8.5    # 8.5mm total depth (provides 3mm+ melt reservoir beneath insert)
-insert_chamfer_d = 4.8     # 45 deg micro-chamfer at mouth (stops surface burrs / mushrooming)
-insert_chamfer_depth = 0.4 # 0.4mm depth for 45 deg transition: (4.8 - 4.0) / 2 = 0.4mm
+# 2. Melt Reservoir: 8.5mm total depth (provides 2.8mm+ empty relief chamber beneath insert)
+# 3. Straight Pilot Counterbore: ø5.0mm x 1.20mm deep (holds insert perfectly perpendicular prior to heating)
+insert_hole_d = 4.0          # Straight ø4.00mm bore (Ruthex/CNC Kitchen standard for 4.6mm knurl)
+insert_hole_depth = 8.5      # 8.50mm total depth (provides 2.8mm+ melt reservoir beneath insert)
+insert_pilot_d = 5.0         # Straight ø5.00mm pilot counterbore (seats insert straight before heating)
+insert_pilot_depth = 1.2     # 1.20mm pilot depth (captures knurl to prevent tilting)
 
 with BuildPart() as insert_holes:
     for bx, by in boss_locs:
         z_seam = get_seam_z(by)
         loc = Location((bx, by, z_seam), (math.degrees(face_angle), 0, 0))
-        # 1. Main straight bore + melt reservoir (8.5mm deep into the boss along pillar axis)
+        # 1. Main straight bore + melt reservoir (8.5mm deep into boss along pillar axis)
         with Locations(loc * Location((0, 0, insert_hole_depth / 2.0))):
             Cylinder(radius=insert_hole_d / 2.0, height=insert_hole_depth)
-        # 2. 45 deg anti-burr micro-chamfer at the opening mouth
-        with Locations(loc * Location((0, 0, insert_chamfer_depth / 2.0))):
-            Cone(bottom_radius=insert_chamfer_d / 2.0, top_radius=insert_hole_d / 2.0, height=insert_chamfer_depth)
+        # 2. Straight cylindrical pilot counterbore at opening mouth (1.2mm deep)
+        with Locations(loc * Location((0, 0, insert_pilot_depth / 2.0))):
+            Cylinder(radius=insert_pilot_d / 2.0, height=insert_pilot_depth)
 case_top = case_top - insert_holes.part
 
 # ==========================================
